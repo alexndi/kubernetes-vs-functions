@@ -1,0 +1,21 @@
+{
+    "name": "weather-api-kubernetes",
+    "version": "1.0.0",
+    "description": "Weather API for Kubernetes deployment",
+    "main": "src/app.js",
+    "scripts": {
+        "start": "node src/app.js",
+        "dev": "nodemon src/app.js",
+        "test": "jest"
+    },
+    "dependencies": {
+        "express": "^4.21.2"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "nodemon": "^2.0.22"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}
