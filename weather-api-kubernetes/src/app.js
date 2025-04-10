@@ -1,9 +1,12 @@
-// src/app.js
 const express = require('express');
+const cors = require('cors');
 const WeatherService = require('./weather-service');
 
 const app = express();
 const weatherService = new WeatherService();
+
+// Enable CORS for all routes
+app.use(cors());
 
 // Health check endpoint
 app.get('/health', (req, res) => {
