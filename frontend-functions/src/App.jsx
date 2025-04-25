@@ -1,4 +1,4 @@
-// App.js for the Azure Functions version
+// src/App.js
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
@@ -11,15 +11,15 @@ function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  // Azure Functions backend URL
-  const BACKEND_URL = 'http://localhost:7071';
+  // Azure Functions backend URL - update this if your function runs on a different port
+  const BACKEND_URL = 'http://localhost:7071/api';
   
   const fetchPosts = async (selectedCategory) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(`${BACKEND_URL}/api/posts/${selectedCategory}`);
+      const response = await fetch(`${BACKEND_URL}/posts/${selectedCategory}`);
       
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -41,7 +41,7 @@ function App() {
     setError(null);
     
     try {
-      const response = await fetch(`${BACKEND_URL}/api/post/${postId}`);
+      const response = await fetch(`${BACKEND_URL}/post/${postId}`);
       
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -74,11 +74,11 @@ function App() {
   // Handle login button click
   const handleLoginClick = () => {
     // For now, just toggle login state for demonstration
+    // Later, this will integrate with Azure AD
     setIsLoggedIn(!isLoggedIn);
     
-    // In a real implementation, this would redirect to Azure AD
+    // In a real implementation with Azure AD, this would redirect to login
     console.log("Would redirect to Azure AD login");
-    // window.location.href = "https://login.microsoftonline.com/...";
   };
   
   return (

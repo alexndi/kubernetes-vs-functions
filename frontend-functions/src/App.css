@@ -3,10 +3,11 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #121212;
+  color: #e0e0e0;
 }
 
 .App {
-  color: #333;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -14,27 +15,37 @@ body {
 
 /* Theme variables */
 .kubernetes-theme {
-  --primary-color: #326CE5;
+  --primary-color: #5e92ff;
   --secondary-color: #4CAF50;
-  --header-bg: #f8f9fa;
-  --card-bg: #f2f7ff;
-  --tag-bg: #e1e9fd;
-  --header-border: #d1d9ff;
-  --gradient-start: #e6efff;
-  --gradient-end: #ffffff;
-  --button-hover: #2857c7;
+  --header-bg: #1e1e1e;
+  --card-bg: #2a2a2a;
+  --tag-bg: #3a3a3a;
+  --header-border: #333;
+  --gradient-start: #1e2a3a;
+  --gradient-end: #121212;
+  --button-hover: #4577dd;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #909090;
+  --error-bg: #3a1a1a;
+  --error-color: #ff5252;
 }
 
 .azure-theme {
-  --primary-color: #0078D4;
+  --primary-color: #0095ff;
   --secondary-color: #50E6FF;
-  --header-bg: #f0f8ff;
-  --card-bg: #f0f7ff;
-  --tag-bg: #e0f0ff;
-  --header-border: #d0e7ff;
-  --gradient-start: #e6f3ff;
-  --gradient-end: #ffffff;
-  --button-hover: #0063b1;
+  --header-bg: #1e1e1e;
+  --card-bg: #2a2a2a;
+  --tag-bg: #3a3a3a;
+  --header-border: #333;
+  --gradient-start: #1a2a3a;
+  --gradient-end: #121212;
+  --button-hover: #007ad9;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #909090;
+  --error-bg: #3a1a1a;
+  --error-color: #ff5252;
 }
 
 /* Header and Navigation */
@@ -48,7 +59,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .logo {
@@ -71,7 +82,7 @@ body {
   border: none;
   padding: 10px 15px;
   font-size: 1rem;
-  color: #555;
+  color: var(--text-secondary);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
@@ -79,7 +90,7 @@ body {
 
 .main-nav button:hover {
   color: var(--primary-color);
-  background-color: rgba(0,0,0,0.03);
+  background-color: rgba(255,255,255,0.05);
 }
 
 .main-nav button.active {
@@ -103,7 +114,7 @@ body {
   font-size: 0.9rem;
   border: none;
   color: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .login-button.keycloak {
@@ -145,6 +156,7 @@ main {
   background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
   border-radius: 8px;
   margin-bottom: 2rem;
+  border: 1px solid var(--header-border);
 }
 
 .hero-section h2 {
@@ -158,10 +170,11 @@ main {
   max-width: 800px;
   margin: 0 auto 1rem;
   line-height: 1.5;
+  color: var(--text-primary);
 }
 
 .hero-subtitle {
-  color: #666;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -175,7 +188,7 @@ main {
   background-color: var(--card-bg);
   border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   border: 1px solid var(--header-border);
@@ -183,7 +196,8 @@ main {
 
 .category-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  border-color: var(--primary-color);
 }
 
 .category-card h3 {
@@ -193,7 +207,7 @@ main {
 }
 
 .category-card p {
-  color: #666;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin: 0;
 }
@@ -203,7 +217,7 @@ main {
   font-size: 1.8rem;
   color: var(--primary-color);
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--header-border);
   padding-bottom: 0.5rem;
 }
 
@@ -211,17 +225,18 @@ main {
   text-align: center;
   padding: 20px;
   font-style: italic;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .error {
-  color: #d32f2f;
+  color: var(--error-color);
   text-align: center;
   padding: 20px;
   font-weight: bold;
-  background-color: #ffebee;
+  background-color: var(--error-bg);
   border-radius: 4px;
   margin: 20px 0;
+  border: 1px solid #5a2a2a;
 }
 
 .posts-grid {
@@ -231,19 +246,20 @@ main {
 }
 
 .post-card {
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   text-align: left;
-  border: 1px solid #eee;
+  border: 1px solid var(--header-border);
 }
 
 .post-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  border-color: var(--primary-color);
 }
 
 .post-card h3 {
@@ -253,7 +269,7 @@ main {
 }
 
 .post-excerpt {
-  color: #666;
+  color: var(--text-secondary);
   margin: 10px 0;
   line-height: 1.5;
 }
@@ -262,17 +278,18 @@ main {
   margin-top: 15px;
   display: flex;
   justify-content: space-between;
-  color: #999;
+  color: var(--text-tertiary);
   font-size: 0.85rem;
 }
 
 /* Post detail page */
 .post-detail {
-  background-color: white;
+  background-color: var(--card-bg);
   border-radius: 8px;
   padding: 30px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   text-align: left;
+  border: 1px solid var(--header-border);
 }
 
 .back-button {
@@ -299,14 +316,14 @@ main {
 
 .post-meta {
   margin-bottom: 25px;
-  color: #666;
+  color: var(--text-secondary);
   display: flex;
   gap: 20px;
 }
 
 .post-content {
   line-height: 1.7;
-  color: #444;
+  color: var(--text-primary);
   margin-bottom: 30px;
 }
 
@@ -334,7 +351,7 @@ footer {
   margin-top: 3rem;
   padding: 1.5rem;
   background-color: var(--header-bg);
-  color: #999;
+  color: var(--text-tertiary);
   font-size: 0.9rem;
   text-align: center;
   border-top: 1px solid var(--header-border);
@@ -342,8 +359,80 @@ footer {
 
 .server-info {
   font-size: 0.8rem;
-  color: #bbb;
+  color: var(--text-tertiary);
   margin-top: 5px;
+}
+
+/* Profile page styles */
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.profile-card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  padding: 30px;
+  text-align: left;
+  border: 1px solid var(--header-border);
+}
+
+.profile-header {
+  border-bottom: 1px solid var(--header-border);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-header h3 {
+  font-size: 1.8rem;
+  color: var(--primary-color);
+  margin: 0 0 5px 0;
+}
+
+.profile-email {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.profile-details h4 {
+  color: var(--primary-color);
+  margin: 20px 0 10px 0;
+  font-size: 1.2rem;
+}
+
+.profile-details p {
+  color: var(--text-primary);
+}
+
+.profile-details p strong {
+  color: var(--text-secondary);
+}
+
+.role-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.role-item {
+  background-color: var(--tag-bg);
+  color: var(--primary-color);
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+}
+
+.profile-message {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--header-border);
+  font-style: italic;
+  color: var(--text-secondary);
 }
 
 /* Responsive adjustments */
