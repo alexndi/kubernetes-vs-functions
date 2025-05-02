@@ -1,20 +1,30 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// Define types for our data structures
+interface Post {
+  id: string;
+  title: string;
+  author: string;
+  date: string;
+  excerpt: string;
+  tags: string[];
+  content?: string;
+}
+
 function App() {
-  const [posts, setPosts] = useState([]);
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [category, setCategory] = useState(null);
-  const [currentPage, setCurrentPage] = useState('home');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<'home' | 'blog'>('home');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   
   // Azure Functions backend URL - update this if your function runs on a different port
-  const BACKEND_URL = 'http://localhost:7071/api';
+  const BACKEND_URL: string = 'http://localhost:7071/api';
   
-  const fetchPosts = async (selectedCategory) => {
+  const fetchPosts = async (selectedCategory: string): Promise<void> => {
     setLoading(true);
     setError(null);
     
@@ -29,14 +39,19 @@ function App() {
       setPosts(data.posts);
       setSelectedPost(null); // Reset selected post when fetching new category
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching posts:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+        console.error('Error fetching posts:', err);
+      } else {
+        setError('An unknown error occurred');
+        console.error('Unknown error:', err);
+      }
     } finally {
       setLoading(false);
     }
   };
   
-  const fetchPostDetail = async (postId) => {
+  const fetchPostDetail = async (postId: string): Promise<void> => {
     setLoading(true);
     setError(null);
     
@@ -50,29 +65,34 @@ function App() {
       const data = await response.json();
       setSelectedPost(data);
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching post detail:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+        console.error('Error fetching post detail:', err);
+      } else {
+        setError('An unknown error occurred');
+        console.error('Unknown error:', err);
+      }
     } finally {
       setLoading(false);
     }
   };
   
   // Handle category selection
-  const handleCategoryChange = (newCategory) => {
+  const handleCategoryChange = (newCategory: string): void => {
     setCategory(newCategory);
     fetchPosts(newCategory);
     setCurrentPage('blog');
   };
   
   // Go to home page
-  const goHome = () => {
+  const goHome = (): void => {
     setCurrentPage('home');
     setCategory(null);
     setSelectedPost(null);
   };
   
   // Handle login button click
-  const handleLoginClick = () => {
+  const handleLoginClick = (): void => {
     // For now, just toggle login state for demonstration
     // Later, this will integrate with Azure AD
     setIsLoggedIn(!isLoggedIn);

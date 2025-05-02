@@ -1,16 +1,29 @@
 import Keycloak from 'keycloak-js';
 
+// Define types
+interface KeycloakConfig {
+  url: string;
+  realm: string;
+  clientId: string;
+}
+
+type AuthSuccessCallback = (authenticated: boolean) => void;
+type AuthErrorCallback = (error: Error) => void;
+
 // Initialize Keycloak
-let keycloakInstance = null;
+let keycloakInstance: Keycloak | null = null;
 
 // Create a Keycloak instance
-const initKeycloak = (onAuthSuccess, onAuthError) => {
+const initKeycloak = (
+  onAuthSuccess?: AuthSuccessCallback,
+  onAuthError?: AuthErrorCallback
+): Promise<boolean> => {
   if (keycloakInstance) {
-    return Promise.resolve(keycloakInstance.authenticated);
+    return Promise.resolve(keycloakInstance.authenticated || false);
   }
 
   // Make sure this URL matches your Keycloak server
-  const keycloakConfig = {
+  const keycloakConfig: KeycloakConfig = {
     url: 'http://192.168.49.2:30387',  // Your Keycloak URL from minikube service keycloak-service --url
     realm: 'it-blog-realm',
     clientId: 'it-blog-client'
@@ -33,7 +46,7 @@ const initKeycloak = (onAuthSuccess, onAuthError) => {
   
   keycloakInstance.onAuthError = (error) => {
     console.error('Auth error:', error);
-    if (onAuthError) onAuthError(error);
+    if (onAuthError) onAuthError(new Error('Authentication error'));
   };
   
   return keycloakInstance.init({
@@ -48,17 +61,17 @@ const initKeycloak = (onAuthSuccess, onAuthError) => {
   })
   .catch(error => {
     console.error('Failed to initialize Keycloak:', error);
-    if (onAuthError) onAuthError(error);
+    if (onAuthError) onAuthError(error instanceof Error ? error : new Error(String(error)));
     throw error;
   });
 };
 
-const getKeycloak = () => {
+const getKeycloak = (): Keycloak | null => {
   return keycloakInstance;
 };
 
 // Explicitly handle login/logout
-const login = () => {
+const login = (): void => {
   if (keycloakInstance) {
     console.log("Attempting login");
     keycloakInstance.login();
@@ -67,7 +80,7 @@ const login = () => {
   }
 };
 
-const logout = () => {
+const logout = (): void => {
   if (keycloakInstance) {
     console.log("Attempting logout");
     keycloakInstance.logout();

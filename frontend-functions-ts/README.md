@@ -1,6 +1,6 @@
-# DevInsights Blog Frontend (Azure Functions Version)
+# DevInsights Blog Frontend - TypeScript Azure Functions Version
 
-This project is a React-based frontend for the DevInsights blog application that connects to the Azure Functions API backend.
+This project is a React-based TypeScript frontend for the DevInsights blog application that connects to the Azure Functions API backend.
 
 ## Features
 
@@ -8,6 +8,7 @@ This project is a React-based frontend for the DevInsights blog application that
 - Read individual blog posts
 - Responsive design for desktop and mobile
 - Prepared for Azure AD authentication (to be implemented)
+- Fully typed with TypeScript
 
 ## Getting Started
 
@@ -32,13 +33,14 @@ The app will open in your default browser at [http://localhost:3000](http://loca
 
 ### Configuration
 
-If your Azure Functions backend runs on a different port or URL, update the `BACKEND_URL` constant in `src/App.js`.
+If your Azure Functions backend runs on a different port or URL, update the `BACKEND_URL` constant in `src/App.tsx`.
 
 ## Project Structure
 
-- `src/App.js` - Main application component
+- `src/App.tsx` - Main application component
 - `src/App.css` - Application styles
-- `src/index.js` - React entry point
+- `src/index.tsx` - React entry point
+- `src/services/` - Service modules for authentication and API calls
 - `public/` - Static assets
 
 ## Available Scripts
