@@ -1,46 +1,85 @@
-# Getting Started with Create React App
+# DevInsights Blog Frontend - TypeScript Kubernetes Version
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project is a React-based TypeScript frontend for the DevInsights blog application that connects to a Kubernetes-deployed backend API.
+
+## Features
+
+- Browse blog posts by category
+- Read individual blog posts
+- Responsive design for desktop and mobile
+- Keycloak authentication integration
+- User profile management
+- Fully typed with TypeScript
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 14+ installed
+- The Kubernetes backend running (on port 3001 by default)
+- Keycloak server running (for authentication)
+
+### Installation
+
+1. Clone this repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Start the development server:
+   ```
+   npm start
+   ```
+
+The app will open in your default browser at [http://localhost:3000](http://localhost:3000).
+
+### Configuration
+
+If your Kubernetes backend or Keycloak server run on different ports or URLs, update the following constants:
+- `BACKEND_URL` in `src/App.tsx` 
+- Keycloak configuration in `src/services/keycloak.ts`
+
+## Project Structure
+
+- `src/App.tsx` - Main application component
+- `src/App.css` - Application styles
+- `src/index.tsx` - React entry point
+- `src/services/` - Service modules for authentication and API calls
+- `src/models/` - TypeScript interfaces and types
+- `public/` - Static assets
 
 ## Available Scripts
 
-In the project directory, you can run:
+- `npm start` - Runs the app in development mode
+- `npm test` - Launches the test runner
+- `npm run build` - Builds the app for production
+- `npm run eject` - Ejects from Create React App
 
-### `npm start`
+## Authentication
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+This frontend uses Keycloak for authentication. The integration is handled in `src/services/keycloak.ts`.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Key authentication features:
+- Login/logout functionality
+- Token management
+- User profile access
+- Role-based authorization
 
-### `npm test`
+## Deployment
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+To deploy this frontend with your Kubernetes cluster:
 
-### `npm run build`
+1. Build the Docker image:
+   ```
+   docker build -t blog-frontend:latest .
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. Deploy to Kubernetes:
+   ```
+   kubectl apply -f k8s/frontend-deployment.yaml
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+3. Access the deployed application:
+   ```
+   minikube service blog-frontend-service
+   ```
