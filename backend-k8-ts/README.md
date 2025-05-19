@@ -165,3 +165,13 @@ Get a specific post:
 ```
 curl http://localhost:3001/api/post/understanding-typescript-generics
 ```
+
+
+
+
+
+
+AKS:
+cd aks-k8/
+kubectl apply -f blog-api-deployment.yaml 
+kubectl get se

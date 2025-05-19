@@ -20,7 +20,7 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Create auth middleware
 const authMiddleware = new AuthMiddleware(getKeycloakJwksUri());
-
+console.log(process.env)
 // Middleware
 app.use(express.json());
 app.use(cors({
@@ -39,10 +39,9 @@ async function initializeDatabase(): Promise<void> {
     console.log('Running migrations...');
     await runMigrations();
     
-    if (NODE_ENV === 'development') {
-      console.log('Seeding database with sample data...');
-      await seed();
-    }
+    console.log('Seeding database with sample data...');
+    await seed();
+  
     
     console.log('Database initialization completed.');
   } catch (error) {

@@ -83,3 +83,8 @@ To deploy this frontend with your Kubernetes cluster:
    ```
    minikube service blog-frontend-service
    ```
+
+
+
+   AKS build:
+   docker build   --build-arg REACT_APP_BACKEND_URL=http://20.13.202.248   --build-arg REACT_APP_KEYCLOAK_URL=http://keycloak-service   --build-arg REACT_APP_KEYCLOAK_REALM=it-blog-realm   --build-arg REACT_APP_KEYCLOAK_CLIENT_ID=it-blog-client   -t blogacrcw3c.azurecr.io/blog-frontend:latest . --no-cache

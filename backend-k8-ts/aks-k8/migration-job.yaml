@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: blog-api-migrate
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: migrate
+        image: blogacrcw3c.azurecr.io/blog-api:latest  # Replace XXXX
+        command: ["npm", "run", "migrate"]
+        env:
+        - name: POSTGRES_HOST
+          value: "blog-postgres-cw3c.postgres.database.azure.com"  # Replace XXXX
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: "postgres"
+        - name: POSTGRES_USER
+          value: "pgadmin"
+        - name: POSTGRES_PASSWORD
+          value: "blogpassword"  # Your actual password
+        - name: NODE_ENV
+          value: "production"
+      backoffLimit: 3

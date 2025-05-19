@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams, Navigate } from 'react-router-dom';
 import './App.css';
 import { initKeycloak, getKeycloak, login, logout } from './services/keycloak';
 
@@ -29,19 +30,10 @@ interface UserProfile {
   message: string;
 }
 
+// Main App component
 function App() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [category, setCategory] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<'home' | 'blog' | 'profile'>('home');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [keycloakInitialized, setKeycloakInitialized] = useState<boolean>(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  
-  // Kubernetes backend URL - update this with your actual nodeport
-  const BACKEND_URL: string = 'http://localhost:3001';
   
   // Initialize Keycloak
   useEffect(() => {
@@ -60,6 +52,136 @@ function App() {
       setKeycloakInitialized(true);
     });
   }, []);
+  
+  // Handle login button click
+  const handleLoginClick = (): void => {
+    if (isLoggedIn) {
+      logout();
+    } else {
+      login();
+    }
+  };
+  
+  return (
+    <Router>
+      <div className="App kubernetes-theme">
+        <header className="App-header">
+          <div className="logo">
+            <Link to="/">
+              <h1>DevInsights</h1>
+            </Link>
+          </div>
+          
+          <nav className="main-nav">
+            <Link to="/">
+              <button>Home</button>
+            </Link>
+            <Link to="/category/programming">
+              <button>Programming</button>
+            </Link>
+            <Link to="/category/devops">
+              <button>DevOps</button>
+            </Link>
+            <Link to="/category/cloud">
+              <button>Cloud</button>
+            </Link>
+            <Link to="/category/security">
+              <button>Security</button>
+            </Link>
+            {isLoggedIn && (
+              <Link to="/profile">
+                <button>Profile</button>
+              </Link>
+            )}
+          </nav>
+          
+          <div className="auth-container">
+            <button className="login-button keycloak" onClick={handleLoginClick}>
+              {isLoggedIn ? 'Logout' : 'Login with Keycloak'}
+            </button>
+          </div>
+        </header>
+        
+        <main>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/category/:categoryName" element={<BlogPage />} />
+            <Route path="/post/:postId" element={<PostDetailPage />} />
+            <Route path="/profile" element={
+              isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />
+            } />
+          </Routes>
+        </main>
+        
+        <footer>
+          <p>DevInsights Blog - Kubernetes Edition</p>
+          <p className="server-info">
+            Server: Kubernetes Cluster | Node Port: 32751
+          </p>
+        </footer>
+      </div>
+    </Router>
+  );
+}
+
+// Home Page Component
+function HomePage() {
+  const navigate = useNavigate();
+  
+  const handleCategoryClick = (category: string) => {
+    navigate(`/category/${category}`);
+  };
+  
+  return (
+    <div className="home-page">
+      <div className="hero-section">
+        <h2>Welcome to DevInsights Blog</h2>
+        <p className="hero-text">
+          Your source for in-depth technical articles on programming, DevOps, cloud, and security
+        </p>
+        <p className="hero-subtitle">
+          Powered by containerized microservices running on Kubernetes
+        </p>
+      </div>
+      
+      <div className="category-grid">
+        <div className="category-card" onClick={() => handleCategoryClick('programming')}>
+          <h3>Programming</h3>
+          <p>Articles about languages, frameworks, and software development best practices</p>
+        </div>
+        <div className="category-card" onClick={() => handleCategoryClick('devops')}>
+          <h3>DevOps</h3>
+          <p>Continuous integration, deployment, and modern operational practices</p>
+        </div>
+        <div className="category-card" onClick={() => handleCategoryClick('cloud')}>
+          <h3>Cloud</h3>
+          <p>Cloud platforms, services, architectures, and deployment strategies</p>
+        </div>
+        <div className="category-card" onClick={() => handleCategoryClick('security')}>
+          <h3>Security</h3>
+          <p>Application security, secure coding practices, and threat mitigation</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Blog Page Component (category view)
+function BlogPage() {
+  const { categoryName } = useParams<{ categoryName: string }>();
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Kubernetes backend URL - update this with your actual nodeport
+  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+  
+  useEffect(() => {
+    if (categoryName) {
+      fetchPosts(categoryName);
+    }
+  }, [categoryName]);
   
   const fetchPosts = async (selectedCategory: string): Promise<void> => {
     setLoading(true);
@@ -83,7 +205,6 @@ function App() {
       
       const data = await response.json();
       setPosts(data.posts);
-      setSelectedPost(null); // Reset selected post when fetching new category
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -97,7 +218,50 @@ function App() {
     }
   };
   
-  const fetchPostDetail = async (postId: string): Promise<void> => {
+  return (
+    <>
+      {loading && <div className="loading">Loading...</div>}
+      {error && <div className="error">Error: {error}</div>}
+      
+      <h2 className="category-title">{categoryName && categoryName.charAt(0).toUpperCase() + categoryName.slice(1)} Articles</h2>
+      <div className="posts-grid">
+        {posts.map(post => (
+          <div 
+            key={post.id} 
+            className="post-card"
+            onClick={() => navigate(`/post/${post.id}`)}
+          >
+            <h3>{post.title}</h3>
+            <p className="post-excerpt">{post.excerpt}</p>
+            <div className="post-footer">
+              <span className="post-author">{post.author}</span>
+              <span className="post-date">{new Date(post.date).toLocaleDateString()}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+// Post Detail Page Component
+function PostDetailPage() {
+  const { postId } = useParams<{ postId: string }>();
+  const navigate = useNavigate();
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Kubernetes backend URL
+  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+  
+  useEffect(() => {
+    if (postId) {
+      fetchPostDetail(postId);
+    }
+  }, [postId]);
+  
+  const fetchPostDetail = async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     
@@ -109,7 +273,7 @@ function App() {
     }
     
     try {
-      const response = await fetch(`${BACKEND_URL}/api/post/${postId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/post/${id}`, {
         headers: headers
       });
       
@@ -132,7 +296,59 @@ function App() {
     }
   };
   
-  // Fetch user profile 
+  if (loading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+  if (!selectedPost) return <div className="loading">Post not found</div>;
+  
+  // Get the category from the tags to navigate back
+  const getCategoryFromTags = (): string => {
+    const categories = ['programming', 'devops', 'cloud', 'security'];
+    const foundCategory = categories.find(cat => selectedPost.tags.includes(cat));
+    return foundCategory || 'programming';
+  };
+  
+  return (
+    <div className="post-detail">
+      <button className="back-button" onClick={() => navigate(`/category/${getCategoryFromTags()}`)}>
+        ← Back to list
+      </button>
+      
+      <article>
+        <h2>{selectedPost.title}</h2>
+        <div className="post-meta">
+          <span className="post-author">By {selectedPost.author}</span>
+          <span className="post-date">{new Date(selectedPost.date).toLocaleDateString()}</span>
+        </div>
+        
+        <div className="post-content">
+          {selectedPost.content?.split('\n').map((paragraph, i) => (
+            <p key={i}>{paragraph}</p>
+          ))}
+        </div>
+        
+        <div className="post-tags">
+          {selectedPost.tags?.map(tag => (
+            <span className="tag" key={tag}>{tag}</span>
+          ))}
+        </div>
+      </article>
+    </div>
+  );
+}
+
+// Profile Page Component
+function ProfilePage() {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Kubernetes backend URL
+  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+  
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+  
   const fetchUserProfile = async (): Promise<void> => {
     setLoading(true);
     setError(null);
@@ -154,7 +370,6 @@ function App() {
         
         const data = await response.json();
         setUserProfile(data);
-        setCurrentPage('profile');
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -172,216 +387,45 @@ function App() {
     }
   };
   
-  // Handle category selection
-  const handleCategoryChange = (newCategory: string): void => {
-    setCategory(newCategory);
-    fetchPosts(newCategory);
-    setCurrentPage('blog');
-  };
-  
-  // Go to home page
-  const goHome = (): void => {
-    setCurrentPage('home');
-    setCategory(null);
-    setSelectedPost(null);
-  };
-  
-  // Handle login button click
-  const handleLoginClick = (): void => {
-    if (isLoggedIn) {
-      logout();
-    } else {
-      login();
-    }
-  };
+  if (loading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+  if (!userProfile) return <div className="loading">Profile not found</div>;
   
   return (
-    <div className="App kubernetes-theme">
-      <header className="App-header">
-        <div className="logo" onClick={goHome}>
-          <h1>DevInsights</h1>
+    <div className="profile-container">
+      <h2>User Profile</h2>
+      <div className="profile-card">
+        <div className="profile-header">
+          <h3>{userProfile.user.preferred_username || userProfile.user.name || 'User'}</h3>
+          {userProfile.user.email && <p className="profile-email">{userProfile.user.email}</p>}
         </div>
         
-        <nav className="main-nav">
-          <button 
-            className={currentPage === 'home' ? 'active' : ''} 
-            onClick={goHome}
-          >
-            Home
-          </button>
-          <button 
-            className={category === 'programming' ? 'active' : ''} 
-            onClick={() => handleCategoryChange('programming')}
-          >
-            Programming
-          </button>
-          <button 
-            className={category === 'devops' ? 'active' : ''} 
-            onClick={() => handleCategoryChange('devops')}
-          >
-            DevOps
-          </button>
-          <button 
-            className={category === 'cloud' ? 'active' : ''} 
-            onClick={() => handleCategoryChange('cloud')}
-          >
-            Cloud
-          </button>
-          <button 
-            className={category === 'security' ? 'active' : ''} 
-            onClick={() => handleCategoryChange('security')}
-          >
-            Security
-          </button>
-          {isLoggedIn && (
-            <button 
-              className={currentPage === 'profile' ? 'active' : ''} 
-              onClick={fetchUserProfile}
-            >
-              Profile
-            </button>
+        <div className="profile-details">
+          <h4>Account Information</h4>
+          <p><strong>User ID:</strong> {userProfile.user.sub}</p>
+          {userProfile.user.given_name && (
+            <p><strong>First Name:</strong> {userProfile.user.given_name}</p>
           )}
-        </nav>
-        
-        <div className="auth-container">
-          <button className="login-button keycloak" onClick={handleLoginClick}>
-            {isLoggedIn ? 'Logout' : 'Login with Keycloak'}
-          </button>
-        </div>
-      </header>
-      
-      <main>
-        {loading && <div className="loading">Loading...</div>}
-        {error && <div className="error">Error: {error}</div>}
-        
-        {currentPage === 'home' && (
-          <div className="home-page">
-            <div className="hero-section">
-              <h2>Welcome to DevInsights Blog</h2>
-              <p className="hero-text">
-                Your source for in-depth technical articles on programming, DevOps, cloud, and security
-              </p>
-              <p className="hero-subtitle">
-                Powered by containerized microservices running on Kubernetes
-              </p>
-            </div>
-            
-            <div className="category-grid">
-              <div className="category-card" onClick={() => handleCategoryChange('programming')}>
-                <h3>Programming</h3>
-                <p>Articles about languages, frameworks, and software development best practices</p>
-              </div>
-              <div className="category-card" onClick={() => handleCategoryChange('devops')}>
-                <h3>DevOps</h3>
-                <p>Continuous integration, deployment, and modern operational practices</p>
-              </div>
-              <div className="category-card" onClick={() => handleCategoryChange('cloud')}>
-                <h3>Cloud</h3>
-                <p>Cloud platforms, services, architectures, and deployment strategies</p>
-              </div>
-              <div className="category-card" onClick={() => handleCategoryChange('security')}>
-                <h3>Security</h3>
-                <p>Application security, secure coding practices, and threat mitigation</p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {currentPage === 'blog' && !selectedPost && (
-          <>
-            <h2 className="category-title">{category && category.charAt(0).toUpperCase() + category.slice(1)} Articles</h2>
-            <div className="posts-grid">
-              {posts.map(post => (
-                <div 
-                  key={post.id} 
-                  className="post-card"
-                  onClick={() => fetchPostDetail(post.id)}
-                >
-                  <h3>{post.title}</h3>
-                  <p className="post-excerpt">{post.excerpt}</p>
-                  <div className="post-footer">
-                    <span className="post-author">{post.author}</span>
-                    <span className="post-date">{new Date(post.date).toLocaleDateString()}</span>
-                  </div>
-                </div>
+          {userProfile.user.family_name && (
+            <p><strong>Last Name:</strong> {userProfile.user.family_name}</p>
+          )}
+          
+          <h4>Roles and Permissions</h4>
+          {userProfile.user.realm_access && userProfile.user.realm_access.roles ? (
+            <ul className="role-list">
+              {userProfile.user.realm_access.roles.map(role => (
+                <li key={role} className="role-item">{role}</li>
               ))}
-            </div>
-          </>
-        )}
-        
-        {currentPage === 'blog' && selectedPost && (
-          <div className="post-detail">
-            <button className="back-button" onClick={() => setSelectedPost(null)}>
-              ← Back to list
-            </button>
-            
-            <article>
-              <h2>{selectedPost.title}</h2>
-              <div className="post-meta">
-                <span className="post-author">By {selectedPost.author}</span>
-                <span className="post-date">{new Date(selectedPost.date).toLocaleDateString()}</span>
-              </div>
-              
-              <div className="post-content">
-                {selectedPost.content?.split('\n').map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
-              </div>
-              
-              <div className="post-tags">
-                {selectedPost.tags?.map(tag => (
-                  <span className="tag" key={tag}>{tag}</span>
-                ))}
-              </div>
-            </article>
+            </ul>
+          ) : (
+            <p>No specific roles assigned</p>
+          )}
+          
+          <div className="profile-message">
+            <p>{userProfile.message}</p>
           </div>
-        )}
-        
-        {currentPage === 'profile' && userProfile && (
-          <div className="profile-container">
-            <h2>User Profile</h2>
-            <div className="profile-card">
-              <div className="profile-header">
-                <h3>{userProfile.user.preferred_username || userProfile.user.name || 'User'}</h3>
-                {userProfile.user.email && <p className="profile-email">{userProfile.user.email}</p>}
-              </div>
-              
-              <div className="profile-details">
-                <h4>Account Information</h4>
-                <p><strong>User ID:</strong> {userProfile.user.sub}</p>
-                {userProfile.user.given_name && (
-                  <p><strong>First Name:</strong> {userProfile.user.given_name}</p>
-                )}
-                {userProfile.user.family_name && (
-                  <p><strong>Last Name:</strong> {userProfile.user.family_name}</p>
-                )}
-                
-                <h4>Roles and Permissions</h4>
-                {userProfile.user.realm_access && userProfile.user.realm_access.roles ? (
-                  <ul className="role-list">
-                    {userProfile.user.realm_access.roles.map(role => (
-                      <li key={role} className="role-item">{role}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>No specific roles assigned</p>
-                )}
-                
-                <div className="profile-message">
-                  <p>{userProfile.message}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-      
-      <footer>
-        <p>DevInsights Blog - Kubernetes Edition</p>
-        <p className="server-info">
-          Server: Kubernetes Cluster | Node Port: 32751
-        </p>
-      </footer>
+        </div>
+      </div>
     </div>
   );
 }

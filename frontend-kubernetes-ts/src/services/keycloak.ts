@@ -13,6 +13,22 @@ type AuthErrorCallback = (error: Error) => void;
 // Initialize Keycloak
 let keycloakInstance: Keycloak | null = null;
 
+// Get environment variables with fallbacks
+const getConfig = (): KeycloakConfig => {
+  // Access environment variables or window.ENV (for runtime config)
+  const env = (window as any).ENV || {};
+  
+  return {
+    // Priority: 1. window.ENV (runtime) 2. process.env (build time) 3. fallback
+    url:  process.env.REACT_APP_KEYCLOAK_URL || 
+         'http://localhost:8080',
+    realm: process.env.REACT_APP_KEYCLOAK_REALM || 
+         'it-blog-realm',
+    clientId: process.env.REACT_APP_KEYCLOAK_CLIENT_ID || 
+         'it-blog-client'
+  };
+};
+
 // Create a Keycloak instance
 const initKeycloak = (
   onAuthSuccess?: AuthSuccessCallback,
@@ -22,13 +38,10 @@ const initKeycloak = (
     return Promise.resolve(keycloakInstance.authenticated || false);
   }
 
-  // Make sure this URL matches your Keycloak server
-  const keycloakConfig: KeycloakConfig = {
-    url: 'http://192.168.49.2:30387',  // Your Keycloak URL from minikube service keycloak-service --url
-    realm: 'it-blog-realm',
-    clientId: 'it-blog-client'
-  };
-
+  console.log(process.env)
+  
+  // Get configuration from environment variables
+  const keycloakConfig = getConfig();
   console.log("Initializing Keycloak with config:", keycloakConfig);
   
   keycloakInstance = new Keycloak(keycloakConfig);
