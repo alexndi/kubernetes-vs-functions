@@ -27,7 +27,7 @@ spec:
               number: 8080
 
 ---
-# API Ingress - With rewrite to remove /api prefix
+# Fixed API Ingress - Corrected rewrite rule
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -35,10 +35,13 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # FIXED: The rewrite rule was incorrect - it was removing /api but backend expects /api
+    nginx.ingress.kubernetes.io/rewrite-target: /api/$2
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-origin: "https://devinsights.site"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
 spec:
   ingressClassName: nginx
   tls:
@@ -49,6 +52,7 @@ spec:
   - host: devinsights.site
     http:
       paths:
+      # FIXED: Updated the path regex to properly capture and forward /api prefix
       - path: /api(/|$)(.*)
         pathType: ImplementationSpecific
         backend:

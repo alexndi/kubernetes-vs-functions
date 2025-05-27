@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams, Navigate } from 'react-router-dom';
+import { ReactKeycloakProvider, useKeycloak } from '@react-keycloak/web';
+import keycloak from './services/keycloak';
 import './App.css';
-import { initKeycloak, getKeycloak, login, logout } from './services/keycloak';
 
 // Define types for our data structures
 interface Post {
@@ -30,107 +31,159 @@ interface UserProfile {
   message: string;
 }
 
+// Loading component
+const LoadingComponent: React.FC = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100vh',
+    fontSize: '1.2rem',
+    backgroundColor: '#121212',
+    color: '#e0e0e0'
+  }}>
+    <div>Loading authentication...</div>
+  </div>
+);
+
 // Main App component
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [keycloakInitialized, setKeycloakInitialized] = useState<boolean>(false);
-  
-  // Initialize Keycloak
-  useEffect(() => {
-    initKeycloak(
-      (authenticated: boolean) => {
-        setIsLoggedIn(authenticated);
-        setKeycloakInitialized(true);
-      },
-      (error: Error) => {
-        console.error('Keycloak error:', error);
-        setKeycloakInitialized(true);
-      }
-    )
-    .catch(error => {
-      console.error('Failed to initialize Keycloak', error);
-      setKeycloakInitialized(true);
-    });
+  // Keycloak initialization options
+  const initOptions = {
+    onLoad: 'check-sso' as const,
+    pkceMethod: 'S256' as const,
+    checkLoginIframe: false,
+    flow: 'standard' as const
+  };
+
+  const handleKeycloakEvent = useCallback((event: string, error?: any) => {
+    // Silent event handling - no logging
   }, []);
-  
-  // Handle login button click
-  const handleLoginClick = (): void => {
-    if (isLoggedIn) {
-      logout();
+
+  const handleKeycloakTokens = useCallback((tokens: any) => {
+    // Silent token handling - no logging
+  }, []);
+
+  return (
+    <ReactKeycloakProvider
+      authClient={keycloak}
+      initOptions={initOptions}
+      LoadingComponent={LoadingComponent}
+      onEvent={handleKeycloakEvent}
+      onTokens={handleKeycloakTokens}
+    >
+      <Router>
+        <div className="App kubernetes-theme">
+          <AppContent />
+        </div>
+      </Router>
+    </ReactKeycloakProvider>
+  );
+}
+
+// Separate AppContent component that uses the Keycloak context
+function AppContent() {
+  return (
+    <>
+      <AppHeader />
+      <main>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/category/:categoryName" element={<BlogPage />} />
+          <Route path="/post/:postId" element={<PostDetailPage />} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        </Routes>
+      </main>
+      <AppFooter />
+    </>
+  );
+}
+
+// Header component
+function AppHeader() {
+  const { keycloak, initialized } = useKeycloak();
+
+  const handleAuth = () => {
+    if (!initialized) return;
+
+    if (keycloak.authenticated) {
+      keycloak.logout();
     } else {
-      login();
+      keycloak.login();
     }
   };
-  
+
   return (
-    <Router>
-      <div className="App kubernetes-theme">
-        <header className="App-header">
-          <div className="logo">
-            <Link to="/">
-              <h1>DevInsights</h1>
-            </Link>
-          </div>
-          
-          <nav className="main-nav">
-            <Link to="/">
-              <button>Home</button>
-            </Link>
-            <Link to="/category/programming">
-              <button>Programming</button>
-            </Link>
-            <Link to="/category/devops">
-              <button>DevOps</button>
-            </Link>
-            <Link to="/category/cloud">
-              <button>Cloud</button>
-            </Link>
-            <Link to="/category/security">
-              <button>Security</button>
-            </Link>
-            {isLoggedIn && (
-              <Link to="/profile">
-                <button>Profile</button>
-              </Link>
-            )}
-          </nav>
-          
-          <div className="auth-container">
-            <button className="login-button keycloak" onClick={handleLoginClick}>
-              {isLoggedIn ? 'Logout' : 'Login with Keycloak'}
-            </button>
-          </div>
-        </header>
-        
-        <main>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/category/:categoryName" element={<BlogPage />} />
-            <Route path="/post/:postId" element={<PostDetailPage />} />
-            <Route path="/profile" element={
-              isLoggedIn ? <ProfilePage /> : <Navigate to="/" replace />
-            } />
-          </Routes>
-        </main>
-        
-        <footer>
-          <p>DevInsights Blog - Kubernetes Edition</p>
-          <p className="server-info">
-            Server: Kubernetes Cluster | Node Port: 32751
-          </p>
-        </footer>
+    <header className="App-header">
+      <div className="logo">
+        <Link to="/">
+          <h1>DevInsights</h1>
+        </Link>
       </div>
-    </Router>
+      
+      <nav className="main-nav">
+        <Link to="/">
+          <button>Home</button>
+        </Link>
+        <Link to="/category/programming">
+          <button>Programming</button>
+        </Link>
+        <Link to="/category/devops">
+          <button>DevOps</button>
+        </Link>
+        <Link to="/category/cloud">
+          <button>Cloud</button>
+        </Link>
+        <Link to="/category/security">
+          <button>Security</button>
+        </Link>
+        {keycloak.authenticated && (
+          <Link to="/profile">
+            <button>Profile</button>
+          </Link>
+        )}
+      </nav>
+      
+      <div className="auth-container">
+        <button 
+          className="login-button keycloak" 
+          onClick={handleAuth}
+          disabled={!initialized}
+        >
+          {keycloak.authenticated ? 'Logout' : 'Login with Keycloak'}
+        </button>
+        {keycloak.authenticated && (
+          <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#90EE90' }}>
+            ✓ {keycloak.tokenParsed?.preferred_username || 'Authenticated'}
+          </span>
+        )}
+      </div>
+    </header>
   );
+}
+
+// Protected Route component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { keycloak, initialized } = useKeycloak();
+
+  if (!initialized) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  if (!keycloak.authenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
 }
 
 // Home Page Component
 function HomePage() {
   const navigate = useNavigate();
   
-  const handleCategoryClick = (category: string) => {
+  const handleCategoryClick = useCallback((category: string) => {
     navigate(`/category/${category}`);
-  };
+  }, [navigate]);
   
   return (
     <div className="home-page">
@@ -166,64 +219,64 @@ function HomePage() {
   );
 }
 
-// Blog Page Component (category view)
+// Blog Page Component
 function BlogPage() {
   const { categoryName } = useParams<{ categoryName: string }>();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { keycloak, initialized } = useKeycloak();
   
-  // Kubernetes backend URL - update this with your actual nodeport
-  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'https://devinsights.site/api';
   
-  useEffect(() => {
-    if (categoryName) {
-      fetchPosts(categoryName);
-    }
-  }, [categoryName]);
-  
-  const fetchPosts = async (selectedCategory: string): Promise<void> => {
+  const fetchPosts = useCallback(async (selectedCategory: string): Promise<void> => {
+    if (!initialized) return;
+    
     setLoading(true);
     setError(null);
     
-    const keycloak = getKeycloak();
-    const headers: HeadersInit = {};
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
     
-    if (keycloak && keycloak.authenticated) {
+    if (keycloak.authenticated && keycloak.token) {
       headers.Authorization = `Bearer ${keycloak.token}`;
     }
     
     try {
-      const response = await fetch(`${BACKEND_URL}/api/posts/${selectedCategory}`, {
-        headers: headers
-      });
+      const response = await fetch(`${BACKEND_URL}/posts/${selectedCategory}`, { headers });
       
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
-      setPosts(data.posts);
+      setPosts(data.posts || []);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-        console.error('Error fetching posts:', err);
-      } else {
-        setError('An unknown error occurred');
-        console.error('Unknown error:', err);
-      }
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [BACKEND_URL, keycloak.authenticated, keycloak.token, initialized]);
+
+  useEffect(() => {
+    if (categoryName && initialized) {
+      fetchPosts(categoryName);
+    }
+  }, [categoryName, fetchPosts, initialized]);
+  
+  if (!initialized) {
+    return <div className="loading">Loading...</div>;
+  }
   
   return (
     <>
       {loading && <div className="loading">Loading...</div>}
       {error && <div className="error">Error: {error}</div>}
       
-      <h2 className="category-title">{categoryName && categoryName.charAt(0).toUpperCase() + categoryName.slice(1)} Articles</h2>
+      <h2 className="category-title">
+        {categoryName && categoryName.charAt(0).toUpperCase() + categoryName.slice(1)} Articles
+      </h2>
       <div className="posts-grid">
         {posts.map(post => (
           <div 
@@ -251,31 +304,24 @@ function PostDetailPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { keycloak, initialized } = useKeycloak();
   
-  // Kubernetes backend URL
-  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'https://devinsights.site/api';
   
-  useEffect(() => {
-    if (postId) {
-      fetchPostDetail(postId);
-    }
-  }, [postId]);
-  
-  const fetchPostDetail = async (id: string): Promise<void> => {
+  const fetchPostDetail = useCallback(async (id: string): Promise<void> => {
+    if (!initialized) return;
+    
     setLoading(true);
     setError(null);
     
-    const keycloak = getKeycloak();
-    const headers: HeadersInit = {};
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
     
-    if (keycloak && keycloak.authenticated) {
+    if (keycloak.authenticated && keycloak.token) {
       headers.Authorization = `Bearer ${keycloak.token}`;
     }
     
     try {
-      const response = await fetch(`${BACKEND_URL}/api/post/${id}`, {
-        headers: headers
-      });
+      const response = await fetch(`${BACKEND_URL}/post/${id}`, { headers });
       
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -284,23 +330,24 @@ function PostDetailPage() {
       const data = await response.json();
       setSelectedPost(data);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-        console.error('Error fetching post detail:', err);
-      } else {
-        setError('An unknown error occurred');
-        console.error('Unknown error:', err);
-      }
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [BACKEND_URL, keycloak.authenticated, keycloak.token, initialized]);
+
+  useEffect(() => {
+    if (postId && initialized) {
+      fetchPostDetail(postId);
+    }
+  }, [postId, fetchPostDetail, initialized]);
   
+  if (!initialized) return <div className="loading">Loading...</div>;
   if (loading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">Error: {error}</div>;
   if (!selectedPost) return <div className="loading">Post not found</div>;
   
-  // Get the category from the tags to navigate back
   const getCategoryFromTags = (): string => {
     const categories = ['programming', 'devops', 'cloud', 'security'];
     const foundCategory = categories.find(cat => selectedPost.tags.includes(cat));
@@ -341,54 +388,93 @@ function ProfilePage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { keycloak, initialized } = useKeycloak();
   
-  // Kubernetes backend URL
-  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'https://devinsights.site/api';
   
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-  
-  const fetchUserProfile = async (): Promise<void> => {
+  const fetchUserProfile = useCallback(async (): Promise<void> => {
+    if (!initialized || !keycloak.authenticated || !keycloak.token) {
+      setError('Authentication required');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
-    
-    const keycloak = getKeycloak();
-    const headers: HeadersInit = {};
-    
-    if (keycloak && keycloak.authenticated) {
-      headers.Authorization = `Bearer ${keycloak.token}`;
-      
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/user/profile`, {
-          headers: headers
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setUserProfile(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-          console.error('Error fetching user profile:', err);
-        } else {
-          setError('An unknown error occurred');
-          console.error('Unknown error:', err);
-        }
-      } finally {
-        setLoading(false);
+
+    try {
+      // Check token expiration and refresh if needed
+      if (keycloak.isTokenExpired()) {
+        await keycloak.updateToken(30);
       }
-    } else {
-      setError('You must be logged in to view your profile');
+      
+      const response = await fetch(`${BACKEND_URL}/user/profile`, {
+        headers: {
+          'Authorization': `Bearer ${keycloak.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load profile: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setUserProfile(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
+      setError(errorMessage);
+    } finally {
       setLoading(false);
     }
-  };
+  }, [BACKEND_URL, keycloak, initialized]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
   
-  if (loading) return <div className="loading">Loading...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
+  if (!initialized) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="loading">Loading profile...</div>;
+  
+  if (error) {
+    return (
+      <div className="profile-container">
+        <div className="error">
+          <h3>Unable to load profile</h3>
+          <p>{error}</p>
+          <div style={{ marginTop: '20px' }}>
+            <button 
+              onClick={fetchUserProfile} 
+              style={{ 
+                padding: '10px 20px', 
+                marginRight: '10px',
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Try Again
+            </button>
+            <button 
+              onClick={() => keycloak.login()} 
+              style={{ 
+                padding: '10px 20px',
+                backgroundColor: '#2196F3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Re-login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   if (!userProfile) return <div className="loading">Profile not found</div>;
   
   return (
@@ -427,6 +513,20 @@ function ProfilePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Footer component
+function AppFooter() {
+  const { keycloak } = useKeycloak();
+  
+  return (
+    <footer>
+      <p>DevInsights Blog - Kubernetes Edition</p>
+      <p className="server-info">
+        Server: Kubernetes Cluster | Auth: {keycloak.authenticated ? keycloak.tokenParsed?.preferred_username || 'Authenticated' : 'Anonymous'}
+      </p>
+    </footer>
   );
 }
 

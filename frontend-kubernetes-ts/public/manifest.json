@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "DevInsights",
+  "name": "DevInsights - Technical Blog",
+  "description": "Your source for in-depth technical articles on programming, DevOps, cloud, and security",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#5e92ff",
+  "background_color": "#121212",
+  "categories": ["productivity", "education", "technology"]
 }
