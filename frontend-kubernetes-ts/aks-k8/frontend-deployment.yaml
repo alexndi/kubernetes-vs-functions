@@ -24,9 +24,9 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: REACT_APP_BACKEND_URL
-          value: "http://20.13.202.248"
+          value: "https://devinsights.site/api"
         - name: REACT_APP_KEYCLOAK_URL
-          value: "http://keycloak-service:80"
+          value: "https://devinsights.site/auth"
         - name: REACT_APP_KEYCLOAK_REALM
           value: "it-blog-realm"
         - name: REACT_APP_KEYCLOAK_CLIENT_ID
@@ -54,7 +54,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: frontend-internal
   labels:
     app: frontend
 spec:
@@ -63,4 +63,6 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-  type: LoadBalancer
+    name: http
+  type: ClusterIP
+---

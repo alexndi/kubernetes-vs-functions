@@ -57,6 +57,17 @@ resource "azurerm_subnet" "pods_subnet" {
   resource_group_name  = azurerm_resource_group.aks.name
   virtual_network_name = azurerm_virtual_network.aks_vnet.name
   address_prefixes     = ["10.0.3.0/24"]
+
+    # This delegation is REQUIRED for AKS pod subnet
+  delegation {
+    name = "aks-delegation"
+    service_delegation {
+      name = "Microsoft.ContainerService/managedClusters"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+      ]
+    }
+  }
 }
 
 # Random suffix for unique names

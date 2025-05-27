@@ -1,0 +1,158 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:25.0.0
+        args: 
+          - start
+          - --cache-stack=kubernetes
+          - --http-enabled=true
+          - --hostname-strict=false
+          - --http-relative-path=/auth
+          - --proxy-headers=xforwarded
+          - --hostname=devinsights.site  # Set the public hostname
+        env:
+          # Admin credentials
+          - name: KEYCLOAK_ADMIN
+            value: "admin"
+          - name: KEYCLOAK_ADMIN_PASSWORD
+            value: "admin"
+          
+          # Database connection
+          - name: KC_DB
+            value: "postgres"
+          - name: KC_DB_URL
+            value: "jdbc:postgresql://blog-postgres-cw3c.postgres.database.azure.com:5432/keycloak"
+          - name: KC_DB_USERNAME
+            value: "pgadmin"
+          - name: KC_DB_PASSWORD
+            value: "blogpassword"
+          - name: KC_DB_SCHEMA
+            value: "public"
+          - name: KC_DB_URL_PROPERTIES
+            value: "ssl=true&sslmode=require"
+            
+          # Clustering configuration with DNS_PING
+          - name: KC_CACHE
+            value: "ispn"
+          - name: KC_CACHE_STACK
+            value: "kubernetes"
+          - name: JGROUPS_CLUSTER_PASSWORD
+            value: "keycloak-cluster-pwd"
+          
+          # DNS_PING configuration
+          - name: jgroups.dns.query
+            value: "keycloak-headless.default.svc.cluster.local"
+          - name: jgroups.dns.record_type
+            value: "A"
+          
+          # HTTPS PROXY CONFIGURATION
+          - name: KC_PROXY_HEADERS
+            value: "forwarded"
+          - name: KC_HOSTNAME_STRICT
+            value: "false"
+          - name: KC_HOSTNAME_STRICT_HTTPS
+            value: "false"
+          - name: KC_HTTP_RELATIVE_PATH
+            value: "/auth"
+          - name: KC_HOSTNAME
+            value: "devinsights.site"
+          
+          # Health and performance
+          - name: KC_HEALTH_ENABLED
+            value: "true"
+          - name: JAVA_OPTS_APPEND
+            value: "-Xms512m -Xmx1024m -Djgroups.dns.query=keycloak-headless.default.svc.cluster.local -Djgroups.dns.record_type=A"
+          
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: management
+          containerPort: 9000
+        - name: jgroups
+          containerPort: 7600
+        - name: jgroups-fd
+          containerPort: 57800
+        
+        # Health checks on main port with /auth prefix
+        livenessProbe:
+          httpGet:
+            path: /auth/
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 6
+        readinessProbe:
+          httpGet:
+            path: /auth/
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          limits:
+            memory: "1536Mi"
+            cpu: "1000m"
+          requests:
+            memory: "1024Mi"
+            cpu: "500m"
+---
+# Headless service for DNS discovery
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-headless
+  labels:
+    app: keycloak
+spec:
+  publishNotReadyAddresses: true
+  selector:
+    app: keycloak
+  ports:
+  - port: 7600
+    targetPort: 7600
+    name: jgroups
+    protocol: TCP
+  - port: 57800
+    targetPort: 57800
+    name: jgroups-fd
+    protocol: TCP
+  - port: 8080
+    targetPort: 8080
+    name: http
+    protocol: TCP
+  clusterIP: None
+  type: ClusterIP
+---
+# Internal service
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-internal
+  labels:
+    app: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP
+---

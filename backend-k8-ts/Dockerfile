@@ -1,11 +1,11 @@
-FROM node:18-alpine AS builder
+FROM node:18-alpine
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies
+# Install dependencies
 RUN npm install
 
 # Copy source files
@@ -14,19 +14,8 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm install --omit=dev
-
-# Copy built app from builder stage
-COPY --from=builder /app/dist ./dist
+# Remove devDependencies to reduce image size
+RUN npm prune --production
 
 EXPOSE 3001
 

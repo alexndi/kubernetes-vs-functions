@@ -1,0 +1,85 @@
+# Keycloak Ingress - No rewrite
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devinsights-keycloak-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/session-cookie-name: "KEYCLOAK_SERVER"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - devinsights.site
+    secretName: devinsights-tls
+  rules:
+  - host: devinsights.site
+    http:
+      paths:
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-internal
+            port:
+              number: 8080
+
+---
+# API Ingress - With rewrite to remove /api prefix
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devinsights-api-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://devinsights.site"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - devinsights.site
+    secretName: devinsights-tls
+  rules:
+  - host: devinsights.site
+    http:
+      paths:
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: blog-api-internal
+            port:
+              number: 3001
+
+---
+# Frontend Ingress - No rewrite
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devinsights-frontend-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - devinsights.site
+    secretName: devinsights-tls
+  rules:
+  - host: devinsights.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-internal
+            port:
+              number: 80

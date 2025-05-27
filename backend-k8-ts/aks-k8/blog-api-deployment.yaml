@@ -34,13 +34,13 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: KEYCLOAK_URL
-          value: "http://keycloak-service:80"
+          value: "https://devinsights.site/auth"
         - name: KEYCLOAK_REALM
           value: "it-blog-realm"
         - name: KEYCLOAK_CLIENT_ID
           value: "it-blog-client"
         - name: FRONTEND_URL
-          value: "http://132.164.183.9"
+          value: "https://devinsights.site"
         resources:
           limits:
             memory: "512Mi"
@@ -62,17 +62,19 @@ spec:
           periodSeconds: 5
 
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: blog-api-service
+  name: blog-api-internal
   labels:
     app: blog-api
 spec:
   selector:
     app: blog-api
   ports:
-  - port: 80
+  - port: 3001
     targetPort: 3001
-    protocol: TCP
-  type: LoadBalancer
+    name: http
+  type: ClusterIP
+---
