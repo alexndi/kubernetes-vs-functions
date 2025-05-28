@@ -1,0 +1,95 @@
+name: Build and Deploy to AKS
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+env:
+  ACR_NAME: blogacrcw3c
+  RESOURCE_GROUP: rg-blog-aks
+  CLUSTER_NAME: blog-aks-cluster
+  
+  # Application URLs
+  BACKEND_URL: https://devinsights.site/api
+  KEYCLOAK_URL: https://devinsights.site/auth
+  KEYCLOAK_REALM: it-blog-realm
+  KEYCLOAK_CLIENT_ID: it-blog-client
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check for changes
+      uses: dorny/paths-filter@v2
+      id: changes
+      with:
+        filters: |
+          backend:
+            - 'kubernetes/backend-kubernetes-ts/**'
+          frontend:
+            - 'kubernetes/frontend-kubernetes-ts/**'
+
+    - name: Setup Node.js
+      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Azure Login
+      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Login to Azure Container Registry
+      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+      run: az acr login --name ${{ env.ACR_NAME }}
+
+    - name: Build and Push Backend
+      if: steps.changes.outputs.backend == 'true'
+      run: |
+        echo "Building backend..."
+        cd kubernetes/backend-kubernetes-ts
+        docker build -t ${{ env.ACR_NAME }}.azurecr.io/blog-api:latest .
+        docker push ${{ env.ACR_NAME }}.azurecr.io/blog-api:latest
+
+    - name: Build and Push Frontend
+      if: steps.changes.outputs.frontend == 'true'
+      run: |
+        echo "Building frontend..."
+        cd kubernetes/frontend-kubernetes-ts
+        docker build \
+          --build-arg REACT_APP_BACKEND_URL=${{ env.BACKEND_URL }} \
+          --build-arg REACT_APP_KEYCLOAK_URL=${{ env.KEYCLOAK_URL }} \
+          --build-arg REACT_APP_KEYCLOAK_REALM=${{ env.KEYCLOAK_REALM }} \
+          --build-arg REACT_APP_KEYCLOAK_CLIENT_ID=${{ env.KEYCLOAK_CLIENT_ID }} \
+          -t ${{ env.ACR_NAME }}.azurecr.io/blog-frontend:latest \
+          .
+        docker push ${{ env.ACR_NAME }}.azurecr.io/blog-frontend:latest
+
+    - name: Deploy to AKS
+      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
+      run: |
+        echo "Deploying to AKS..."
+        # Get AKS credentials
+        az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --overwrite-existing
+        
+        # Restart only changed deployments
+        if [ "${{ steps.changes.outputs.backend }}" == "true" ]; then
+          echo "Restarting backend deployment..."
+          kubectl rollout restart deployment/blog-api
+        fi
+        
+        if [ "${{ steps.changes.outputs.frontend }}" == "true" ]; then
+          echo "Restarting frontend deployment..."
+          kubectl rollout restart deployment/frontend
+        fi
+        
+        echo "Deployment initiated successfully!"
+
+    - name: No Changes
+      if: steps.changes.outputs.backend == 'false' && steps.changes.outputs.frontend == 'false'
+      run: echo "No changes detected. Skipping build and deployment."
