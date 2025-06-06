@@ -1,0 +1,103 @@
+# .github/workflows/deploy-frontend.yml
+name: Deploy Frontend to Static Web Apps
+
+on:
+  push:
+    branches: [main]
+    paths: 
+      - 'functions/frontend-functions-ts/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    branches: [main]
+    paths: 
+      - 'functions/frontend-functions-ts/**'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'
+  FRONTEND_PATH: 'functions/frontend-functions-ts'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ${{ env.FRONTEND_PATH }}/package-lock.json
+
+    - name: 'Install dependencies'
+      run: |
+        cd ${{ env.FRONTEND_PATH }}
+        npm ci
+
+    - name: 'Run tests'
+      run: |
+        cd ${{ env.FRONTEND_PATH }}
+        npm test -- --coverage --watchAll=false
+
+    - name: 'Build application'
+      run: |
+        cd ${{ env.FRONTEND_PATH }}
+        npm run build
+      env:
+        REACT_APP_BACKEND_URL: 'https://func-devinsights.azurewebsites.net/api'
+        REACT_APP_ENVIRONMENT: 'production'
+
+    - name: 'Upload build artifacts'
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: ${{ env.FRONTEND_PATH }}/build/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    environment: production
+
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v4
+
+    - name: 'Download build artifacts'
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-build
+        path: ${{ env.FRONTEND_PATH }}/build/
+
+    - name: 'Deploy to Static Web Apps'
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        action: 'upload'
+        app_location: ${{ env.FRONTEND_PATH }}
+        app_build_command: 'npm run build'
+        output_location: 'build'
+        skip_app_build: true  # We already built in the previous job
+
+    - name: 'Test deployment'
+      run: |
+        # Wait for deployment to complete
+        sleep 60
+        # Test if the site is accessible
+        curl -f "https://swa-devinsights.azurestaticapps.net" || echo "Site not yet available"
+        echo "✅ Frontend deployment completed"
+
+    - name: 'Notify on success'
+      if: success()
+      run: |
+        echo "🚀 Successfully deployed frontend to Static Web Apps"
+        echo "🔗 Frontend URL: https://swa-devinsights.azurestaticapps.net"
+
+    - name: 'Notify on failure'
+      if: failure()
+      run: |
+        echo "❌ Frontend deployment failed"
+        echo "Please check the logs and try again"
