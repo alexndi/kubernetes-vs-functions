@@ -64,24 +64,25 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
   charset   = "utf8"
 }
 
-# Application Insights
-resource "azurerm_application_insights" "main" {
-  name                = "ai-devinsights"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  application_type    = "web"
-  retention_in_days   = 90
-
-  tags = local.common_tags
-}
-
-# Log Analytics Workspace
+# Log Analytics Workspace (must come before Application Insights)
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "law-devinsights"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku                 = "PerGB2018"
   retention_in_days   = 30
+
+  tags = local.common_tags
+}
+
+# Application Insights (with explicit workspace_id)
+resource "azurerm_application_insights" "main" {
+  name                = "ai-devinsights"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  application_type    = "web"
+  retention_in_days   = 90
+  workspace_id        = azurerm_log_analytics_workspace.main.id
 
   tags = local.common_tags
 }
@@ -148,7 +149,10 @@ resource "azurerm_linux_function_app" "main" {
     "POSTGRES_PORT"     = "5432"
     "POSTGRES_DB"       = azurerm_postgresql_flexible_server_database.main.name
     "POSTGRES_USER"     = var.postgres_admin_username
-    "POSTGRES_PASSWORD" = "will-be-updated-by-github-actions"
+    "POSTGRES_PASSWORD" = "YourSecurePassword123!"
+    
+    # Migration key (GitHub Actions will update with real secret)
+    "DB_MIGRATION_KEY"  = "YourSecurePassword123!"
     
     "FRONTEND_URL"      = "https://${var.custom_domain}"
     "NODE_ENV"          = "production"
@@ -158,29 +162,29 @@ resource "azurerm_linux_function_app" "main" {
 }
 
 # Custom Domain for Function App
-resource "azurerm_app_service_custom_hostname_binding" "function_app_custom_domain" {
-  hostname            = "api.${var.custom_domain}"
-  app_service_name    = azurerm_linux_function_app.main.name
-  resource_group_name = azurerm_resource_group.main.name
+# resource "azurerm_app_service_custom_hostname_binding" "function_app_custom_domain" {
+#   hostname            = "api.${var.custom_domain}"
+#   app_service_name    = azurerm_linux_function_app.main.name
+#   resource_group_name = azurerm_resource_group.main.name
 
-  depends_on = [azurerm_linux_function_app.main]
-}
+#   depends_on = [azurerm_linux_function_app.main]
+# }
 
 # SSL Certificate for Function App Custom Domain
-resource "azurerm_app_service_managed_certificate" "function_app_cert" {
-  custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.function_app_custom_domain.id
+# resource "azurerm_app_service_managed_certificate" "function_app_cert" {
+#   custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.function_app_custom_domain.id
 
-  depends_on = [azurerm_app_service_custom_hostname_binding.function_app_custom_domain]
-}
+#   depends_on = [azurerm_app_service_custom_hostname_binding.function_app_custom_domain]
+# }
 
-# SSL Binding for Function App
-resource "azurerm_app_service_certificate_binding" "function_app_ssl" {
-  hostname_binding_id = azurerm_app_service_custom_hostname_binding.function_app_custom_domain.id
-  certificate_id      = azurerm_app_service_managed_certificate.function_app_cert.id
-  ssl_state          = "SniEnabled"
+# # SSL Binding for Function App
+# resource "azurerm_app_service_certificate_binding" "function_app_ssl" {
+#   hostname_binding_id = azurerm_app_service_custom_hostname_binding.function_app_custom_domain.id
+#   certificate_id      = azurerm_app_service_managed_certificate.function_app_cert.id
+#   ssl_state          = "SniEnabled"
 
-  depends_on = [azurerm_app_service_managed_certificate.function_app_cert]
-}
+#   depends_on = [azurerm_app_service_managed_certificate.function_app_cert]
+# }
 
 # Static Web App
 resource "azurerm_static_web_app" "main" {
@@ -194,13 +198,13 @@ resource "azurerm_static_web_app" "main" {
 }
 
 # Custom Domain for Static Web App
-resource "azurerm_static_web_app_custom_domain" "main" {
-  static_web_app_id = azurerm_static_web_app.main.id
-  domain_name       = var.custom_domain
-  validation_type   = "cname-delegation"
+# resource "azurerm_static_web_app_custom_domain" "main" {
+#   static_web_app_id = azurerm_static_web_app.main.id
+#   domain_name       = var.custom_domain
+#   validation_type   = "cname-delegation"
 
-  depends_on = [azurerm_static_web_app.main]
-}
+#   depends_on = [azurerm_static_web_app.main]
+# }
 
 # Action Group for Alerts
 resource "azurerm_monitor_action_group" "main" {
