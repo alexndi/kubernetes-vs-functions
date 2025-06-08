@@ -32,7 +32,7 @@ jobs:
     - name: 'Install and build'
       run: |
         cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-        npm ci
+        npm install
         npm run build
         npm prune --production
 
@@ -84,7 +84,7 @@ jobs:
     - name: 'Install and build'
       run: |
         cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        npm ci
+        npm install
         npm run build
       env:
         REACT_APP_BACKEND_URL: 'https://api.devinsights.site/api'
