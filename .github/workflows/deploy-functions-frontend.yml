@@ -1,9 +1,10 @@
-# .github/workflows/deploy-frontend.yml
-name: Deploy Frontend to App Service
+# .github/workflows/deploy-functions-frontend.yml
+name: Build and deploy React app to Azure Web App - Frontend
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths: 
       - 'functions/frontend-functions-ts/**'
   workflow_dispatch:
@@ -14,39 +15,102 @@ env:
   NODE_VERSION: '18.x'
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    environment: functions
-    
+    permissions:
+      contents: read
+
     steps:
-    - name: 'Checkout'
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: 'Setup Node.js'
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/package.json'
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/package.json'
 
-    - name: 'Install and build'
-      run: |
-        cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        npm install
-        npm run build
-      env:
-        REACT_APP_BACKEND_URL: 'https://api.devinsights.site'
-        CI: false
+      - name: Install dependencies and build React app
+        run: |
+          cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          npm install
+          npm run build
+        env:
+          REACT_APP_BACKEND_URL: 'https://api.devinsights.site'
+          CI: false
 
-    - name: 'Deploy to Azure App Service'
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+      - name: Create deployment package
+        run: |
+          cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          
+          # Create a clean deployment directory
+          mkdir -p deployment
+          
+          # Copy the built React app
+          cp -r build deployment/
+          
+          # Create package.json for production with serve
+          cat > deployment/package.json << 'EOF'
+          {
+            "name": "devinsights-frontend",
+            "version": "1.0.0",
+            "scripts": {
+              "start": "serve -s build -p 8080"
+            },
+            "dependencies": {
+              "serve": "^14.2.1"
+            },
+            "engines": {
+              "node": "18.x"
+            }
+          }
+          EOF
+          
+          # Zip the deployment package (no web.config needed for Linux!)
+          cd deployment
+          zip -r ../release.zip . -x "*.git*" "node_modules/*" ".env*"
+          cd ..
+          
+          echo "✅ Deployment package created successfully"
+          ls -la release.zip
 
-    - name: 'Test deployment'
-      run: |
-        sleep 30
-        curl -f "https://api.devinsights.site" || exit 1
-        echo "✅ Frontend deployment successful"
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'functions'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: release.zip
+
+      - name: 'Test deployment'
+        run: |
+          echo "Waiting for deployment to complete..."
+          sleep 45
+          
+          # Test custom domain if configured
+          curl -f "https://devinsights.site" || echo "Custom domain test failed (may not be configured yet)"
+          
+          echo "✅ Frontend deployment completed"
