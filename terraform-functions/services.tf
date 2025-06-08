@@ -12,23 +12,6 @@ resource "azurerm_storage_account" "functions" {
   tags = local.common_tags
 }
 
-# Storage Account for Static Web Apps
-resource "azurerm_storage_account" "static" {
-  name                     = "ststaticdevinsights"
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = azurerm_resource_group.main.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  min_tls_version          = "TLS1_2"
-
-  static_website {
-    index_document     = "index.html"
-    error_404_document = "404.html"
-  }
-
-  tags = local.common_tags
-}
-
 # PostgreSQL Flexible Server (Public with Azure Services access)
 resource "azurerm_postgresql_flexible_server" "main" {
   name                   = "psql-devinsights"
@@ -64,7 +47,18 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
   charset   = "utf8"
 }
 
-# Log Analytics Workspace (must come before Application Insights)
+# Application Insights
+resource "azurerm_application_insights" "main" {
+  name                = "ai-devinsights"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  application_type    = "web"
+  retention_in_days   = 90
+
+  tags = local.common_tags
+}
+
+# Log Analytics Workspace
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "law-devinsights"
   location            = azurerm_resource_group.main.location
@@ -75,25 +69,24 @@ resource "azurerm_log_analytics_workspace" "main" {
   tags = local.common_tags
 }
 
-# Application Insights (with explicit workspace_id)
-resource "azurerm_application_insights" "main" {
-  name                = "ai-devinsights"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  application_type    = "web"
-  retention_in_days   = 90
-  workspace_id        = azurerm_log_analytics_workspace.main.id
-
-  tags = local.common_tags
-}
-
 # Service Plan for Azure Functions (Consumption)
 resource "azurerm_service_plan" "functions" {
-  name                = "asp-devinsights"
+  name                = "asp-devinsights-functions"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
   sku_name            = "Y1"  # Consumption plan
+  
+  tags = local.common_tags
+}
+
+# Service Plan for App Service (Frontend)
+resource "azurerm_service_plan" "frontend" {
+  name                = "asp-devinsights-frontend"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  os_type             = "Linux"
+  sku_name            = "B1"  # Basic plan - you can change this to F1 for free tier
   
   tags = local.common_tags
 }
@@ -125,8 +118,8 @@ resource "azurerm_linux_function_app" "main" {
 
     cors {
       allowed_origins = [
+        "https://*.azurewebsites.net",
         "https://${var.custom_domain}",
-        "https://*.azurestaticapps.net",  # Allow Static Web Apps
         "http://localhost:3000",
         "http://localhost:3001"
       ]
@@ -149,62 +142,51 @@ resource "azurerm_linux_function_app" "main" {
     "POSTGRES_PORT"     = "5432"
     "POSTGRES_DB"       = azurerm_postgresql_flexible_server_database.main.name
     "POSTGRES_USER"     = var.postgres_admin_username
-    "POSTGRES_PASSWORD" = "YourSecurePassword123!"
+    "POSTGRES_PASSWORD" = "will-be-updated-by-github-actions"
     
-    # Migration key (GitHub Actions will update with real secret)
-    "DB_MIGRATION_KEY"  = "YourSecurePassword123!"
-    
-    "FRONTEND_URL"      = "https://${var.custom_domain}"
+    # Remove circular dependency - will be updated after frontend is created
+    "FRONTEND_URL"      = "https://app-devinsights-frontend.azurewebsites.net"
     "NODE_ENV"          = "production"
   }
 
   tags = local.common_tags
 }
 
-# Custom Domain for Function App
-# resource "azurerm_app_service_custom_hostname_binding" "function_app_custom_domain" {
-#   hostname            = "api.${var.custom_domain}"
-#   app_service_name    = azurerm_linux_function_app.main.name
-#   resource_group_name = azurerm_resource_group.main.name
-
-#   depends_on = [azurerm_linux_function_app.main]
-# }
-
-# SSL Certificate for Function App Custom Domain
-# resource "azurerm_app_service_managed_certificate" "function_app_cert" {
-#   custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.function_app_custom_domain.id
-
-#   depends_on = [azurerm_app_service_custom_hostname_binding.function_app_custom_domain]
-# }
-
-# # SSL Binding for Function App
-# resource "azurerm_app_service_certificate_binding" "function_app_ssl" {
-#   hostname_binding_id = azurerm_app_service_custom_hostname_binding.function_app_custom_domain.id
-#   certificate_id      = azurerm_app_service_managed_certificate.function_app_cert.id
-#   ssl_state          = "SniEnabled"
-
-#   depends_on = [azurerm_app_service_managed_certificate.function_app_cert]
-# }
-
-# Static Web App
-resource "azurerm_static_web_app" "main" {
-  name                = "swa-devinsights"
+# Linux Web App for Frontend
+resource "azurerm_linux_web_app" "frontend" {
+  name                = "app-devinsights-frontend"
+  location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  location            = "West Europe"
-  sku_tier            = "Free"
-  sku_size            = "Free"
+  service_plan_id     = azurerm_service_plan.frontend.id
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  site_config {
+    always_on           = false  # Set to true if using paid plans
+    ftps_state          = "Disabled"
+    http2_enabled       = true
+    minimum_tls_version = "1.2"
+
+    application_stack {
+      node_version = "18-lts"
+    }
+
+    # Lightest option: Use npx serve (no PM2 overhead)
+    app_command_line = "cd /home/site/wwwroot/build && npx serve -s -p 8080"
+  }
+
+  app_settings = {
+    "WEBSITE_NODE_DEFAULT_VERSION"    = "18-lts"
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
+    # Use custom domain for backend API
+    "REACT_APP_BACKEND_URL"          = "https://api.${var.custom_domain}"
+    "NODE_ENV"                       = "production"
+  }
 
   tags = local.common_tags
 }
-
-# Custom Domain for Static Web App
-# resource "azurerm_static_web_app_custom_domain" "main" {
-#   static_web_app_id = azurerm_static_web_app.main.id
-#   domain_name       = var.custom_domain
-#   validation_type   = "cname-delegation"
-
-#   depends_on = [azurerm_static_web_app.main]
-# }
 
 # Action Group for Alerts
 resource "azurerm_monitor_action_group" "main" {

@@ -11,7 +11,7 @@ variable "location" {
 }
 
 variable "custom_domain" {
-  description = "Custom domain for the application (e.g., devinsights.yourdomain.com)"
+  description = "Custom domain for the application (e.g., devinsights.yourdomain.com) - will be configured manually"
   type        = string
   
   validation {
