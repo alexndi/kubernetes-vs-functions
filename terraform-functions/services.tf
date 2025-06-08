@@ -142,7 +142,7 @@ resource "azurerm_linux_function_app" "main" {
     "POSTGRES_PORT"     = "5432"
     "POSTGRES_DB"       = azurerm_postgresql_flexible_server_database.main.name
     "POSTGRES_USER"     = var.postgres_admin_username
-    "POSTGRES_PASSWORD" = "will-be-updated-by-github-actions"
+    "POSTGRES_PASSWORD" = "YourSecurePassword123!"
     
     # Remove circular dependency - will be updated after frontend is created
     "FRONTEND_URL"      = "https://app-devinsights-frontend.azurewebsites.net"
