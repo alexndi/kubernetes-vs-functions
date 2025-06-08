@@ -42,20 +42,20 @@ jobs:
       run: |
         cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         # Create a deployment folder with Node.js structure that Oryx can detect
-        mkdir -p ../deploy-package
+        mkdir -p ./deploy-package
         
         # Copy package.json and package-lock.json for Oryx detection
-        cp package.json ../deploy-package/
+        cp package.json ./deploy-package/
         
         # Copy built React app
-        cp -r build/* ../deploy-package/
+        cp -r build/* ./deploy-package/
 
     - name: 'Deploy to Azure App Service'
       uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: "deploy-package"
+        package: "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/deploy-package"
 
     - name: 'Test deployment'
       run: |
