@@ -32,8 +32,7 @@ jobs:
     - name: 'Install and build'
       run: |
         cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        rm -rf node_modules package-lock.json
-        npm install --legacy-peer-deps --force
+        npm install
         npm run build
       env:
         REACT_APP_BACKEND_URL: 'https://api.devinsights.site'
@@ -48,5 +47,5 @@ jobs:
     - name: 'Test deployment'
       run: |
         sleep 30
-        curl -f "https://devinsights.site" || exit 1
+        curl -f "https://api.devinsights.site" || exit 1
         echo "✅ Frontend deployment successful"
