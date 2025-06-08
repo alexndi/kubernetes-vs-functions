@@ -1,0 +1,51 @@
+# .github/workflows/deploy-frontend.yml
+name: Deploy Frontend to App Service
+
+on:
+  push:
+    branches: [main]
+    paths: 
+      - 'functions/frontend-functions-ts/**'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: 'app-devinsights-frontend'
+  AZURE_WEBAPP_PACKAGE_PATH: 'functions/frontend-functions-ts'
+  NODE_VERSION: '18.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v4
+
+    - name: 'Setup Node.js'
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/package.json'
+
+    - name: 'Install and build'
+      run: |
+        cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        npm install
+        npm run build
+      env:
+        REACT_APP_BACKEND_URL: 'https://api.devinsights.site/api'
+
+    - name: 'Deploy to Azure App Service'
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+    - name: 'Test deployment'
+      run: |
+        sleep 30
+        curl -f "https://devinsights.site" || exit 1
+        echo "✅ Frontend deployment successful"
