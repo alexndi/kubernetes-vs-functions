@@ -16,7 +16,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: production
+    environment: functions
     
     steps:
     - name: 'Checkout'
@@ -36,24 +36,13 @@ jobs:
         npm run build
       env:
         REACT_APP_BACKEND_URL: 'https://api.devinsights.site'
-        CI: false
 
-    - name: 'Create deployment package'
-      run: |
-        cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        # Create a deployment zip with just the build folder and package.json
-        mkdir -p deploy-package
-        cp -r build deploy-package/
-        cp package.json deploy-package/
-        cd deploy-package
-        zip -r ../deploy.zip .
-        
     - name: 'Deploy to Azure App Service'
-      uses: Azure/functions-action@v1
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/deploy.zip'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
     - name: 'Test deployment'
       run: |
