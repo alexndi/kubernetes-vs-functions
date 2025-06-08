@@ -22,7 +22,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   
   // Azure Functions backend URL - update this if your function runs on a different port
-  const BACKEND_URL: string = 'http://localhost:7071/api';
+  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:7071/api';
   
   const fetchPosts = async (selectedCategory: string): Promise<void> => {
     setLoading(true);
