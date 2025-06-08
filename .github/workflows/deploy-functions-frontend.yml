@@ -39,7 +39,7 @@ jobs:
           
           # Build the Docker image
           docker build \
-            --build-arg REACT_APP_BACKEND_URL=https://api.devinsights.site \
+            --build-arg REACT_APP_BACKEND_URL=https://api.devinsights.site/api \
             -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
             .
           
