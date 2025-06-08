@@ -44,14 +44,8 @@ jobs:
         run: |
           cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
           
-          # Create a clean deployment directory
-          mkdir -p deployment
-          
-          # Copy the built React app
-          cp -r build deployment/
-          
-          # Create package.json for production with serve
-          cat > deployment/package.json << 'EOF'
+          # Create package.json for production with serve (at root level)
+          cat > package.json << 'EOF'
           {
             "name": "devinsights-frontend",
             "version": "1.0.0",
@@ -67,13 +61,29 @@ jobs:
           }
           EOF
           
-          # Zip the deployment package (no web.config needed for Linux!)
-          cd deployment
-          zip -r ../release.zip . -x "*.git*" "node_modules/*" ".env*"
-          cd ..
+          # Create .deployment file to prevent Azure from trying to build
+          cat > .deployment << 'EOF'
+          [config]
+          SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          EOF
+          
+          # Create a simple startup script (optional, as npm start should work)
+          cat > startup.sh << 'EOF'
+          #!/bin/bash
+          cd /home/site/wwwroot
+          npm start
+          EOF
+          chmod +x startup.sh
+          
+          # Zip everything including the build folder
+          zip -r release.zip build package.json .deployment startup.sh -x "*.git*" "node_modules/*" ".env*" "src/*" "public/*"
           
           echo "✅ Deployment package created successfully"
           ls -la release.zip
+          
+          # Show what's in the zip for debugging
+          echo "Contents of release.zip:"
+          unzip -l release.zip
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
