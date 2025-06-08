@@ -27,7 +27,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/package-lock.json
+        cache-dependency-path: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/package.json'
 
     - name: 'Install and build'
       run: |
@@ -79,7 +79,7 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
-        cache-dependency-path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/package-lock.json
+        cache-dependency-path: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/package.json'
 
     - name: 'Install and build'
       run: |
@@ -87,8 +87,7 @@ jobs:
         npm ci
         npm run build
       env:
-        # Use custom domain for production builds
-        REACT_APP_BACKEND_URL: 'https://api.devinsights.site'
+        REACT_APP_BACKEND_URL: 'https://api.devinsights.site/api'
 
     - name: 'Deploy to Azure App Service'
       uses: azure/webapps-deploy@v2
