@@ -25,6 +25,28 @@ output "frontend_app_url" {
   value       = "https://${azurerm_linux_web_app.frontend.default_hostname}"
 }
 
+output "container_registry_name" {
+  description = "Name of the Azure Container Registry for frontend"
+  value       = azurerm_container_registry.frontend.name
+}
+
+output "container_registry_login_server" {
+  description = "Login server URL for the Azure Container Registry"
+  value       = azurerm_container_registry.frontend.login_server
+}
+
+output "container_registry_admin_username" {
+  description = "Admin username for the Azure Container Registry"
+  value       = azurerm_container_registry.frontend.admin_username
+  sensitive   = true
+}
+
+output "container_registry_admin_password" {
+  description = "Admin password for the Azure Container Registry"
+  value       = azurerm_container_registry.frontend.admin_password
+  sensitive   = true
+}
+
 output "postgres_server_name" {
   description = "Name of the PostgreSQL server"
   value       = azurerm_postgresql_flexible_server.main.name
@@ -78,14 +100,17 @@ output "deployment_info" {
     frontend_app_name         = azurerm_linux_web_app.frontend.name
     frontend_app_url          = "https://${azurerm_linux_web_app.frontend.default_hostname}"
     frontend_app_custom_url   = "https://${var.custom_domain}"
+    container_registry_name   = azurerm_container_registry.frontend.name
+    container_registry_url    = azurerm_container_registry.frontend.login_server
     custom_domain             = var.custom_domain
     resource_group            = azurerm_resource_group.main.name
     postgres_server           = azurerm_postgresql_flexible_server.main.fqdn
     backend_sku               = "Consumption Plan (Y1)"
-    frontend_sku              = "Basic (B1)"
+    frontend_sku              = "Basic (B1) with Docker"
     database_type             = "Public with Azure Firewall Rules"
     secret_management         = "GitHub Secrets"
-    monthly_cost_estimate     = "~$45"
+    deployment_method         = "Docker containers"
+    monthly_cost_estimate     = "~$50"
   }
 }
 
@@ -98,8 +123,13 @@ output "github_secrets_guide" {
       POSTGRES_PASSWORD = "Use the password from terraform.tfvars"
       DATABASE_URL = "Use the postgres_connection_string output below"
       AZURE_FUNCTIONAPP_PUBLISH_PROFILE = "Get from: az functionapp deployment list-publishing-profiles --name func-devinsights --resource-group rg-devinsights-blog"
-      AZURE_WEBAPP_PUBLISH_PROFILE = "Get from: az webapp deployment list-publishing-profiles --name app-devinsights-frontend --resource-group rg-devinsights-blog"
       AZURE_CREDENTIALS = "Get from: az ad sp create-for-rbac --sdk-auth"
+    }
+    optional_acr_secrets = {
+      note = "ACR credentials are automatically managed via Azure login in GitHub Actions"
+      ACR_LOGIN_SERVER = azurerm_container_registry.frontend.login_server
+      ACR_USERNAME = azurerm_container_registry.frontend.admin_username
+      ACR_PASSWORD = "Available via terraform output container_registry_admin_password"
     }
   }
 }
@@ -109,8 +139,14 @@ output "service_principal_commands" {
   description = "Commands to set up service principal for GitHub Actions"
   value = {
     create_sp = "az ad sp create-for-rbac --name github-actions-devinsights --role contributor --scopes /subscriptions/${var.subscription_id}/resourceGroups/rg-devinsights-blog --sdk-auth"
+    
+    grant_acr_access = "az role assignment create --assignee <service-principal-client-id> --role AcrPush --scope ${azurerm_container_registry.frontend.id}"
+    
     get_function_profile = "az functionapp deployment list-publishing-profiles --name func-devinsights --resource-group rg-devinsights-blog --xml"
-    get_webapp_profile = "az webapp deployment list-publishing-profiles --name app-devinsights-frontend --resource-group rg-devinsights-blog --xml"
+    
+    test_acr_access = "az acr login --name ${azurerm_container_registry.frontend.name}"
+    
+    note = "1. Create service principal with contributor role, 2. Grant ACR push access using the client ID from step 1, 3. Add AZURE_CREDENTIALS to GitHub Secrets"
   }
 }
 

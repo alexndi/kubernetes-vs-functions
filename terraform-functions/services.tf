@@ -12,6 +12,17 @@ resource "azurerm_storage_account" "functions" {
   tags = local.common_tags
 }
 
+# Azure Container Registry for Frontend Docker Images
+resource "azurerm_container_registry" "frontend" {
+  name                = "appdevinsightsfrontend"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  sku                 = "Basic"
+  admin_enabled       = true
+
+  tags = local.common_tags
+}
+
 # PostgreSQL Flexible Server (Public with Azure Services access)
 resource "azurerm_postgresql_flexible_server" "main" {
   name                   = "psql-devinsights"
@@ -54,6 +65,7 @@ resource "azurerm_application_insights" "main" {
   resource_group_name = azurerm_resource_group.main.name
   application_type    = "web"
   retention_in_days   = 90
+  workspace_id        = azurerm_log_analytics_workspace.main.id  # ✅ Required - can't be removed
 
   tags = local.common_tags
 }
@@ -152,7 +164,7 @@ resource "azurerm_linux_function_app" "main" {
   tags = local.common_tags
 }
 
-# Linux Web App for Frontend
+# Linux Web App for Frontend (Docker-enabled)
 resource "azurerm_linux_web_app" "frontend" {
   name                = "app-devinsights-frontend"
   location            = azurerm_resource_group.main.location
@@ -169,20 +181,20 @@ resource "azurerm_linux_web_app" "frontend" {
     http2_enabled       = true
     minimum_tls_version = "1.2"
 
+    # Configure for Docker container deployment
     application_stack {
-      node_version = "18-lts"
+      docker_image_name   = "${azurerm_container_registry.frontend.login_server}/devinsights-frontend:latest"
+      docker_registry_url = "https://${azurerm_container_registry.frontend.login_server}"
     }
-
-    # Lightest option: Use npx serve (no PM2 overhead)
-    app_command_line = "cd /home/site/wwwroot/build && npx serve -s -p 8080"
   }
 
   app_settings = {
-    "WEBSITE_NODE_DEFAULT_VERSION"    = "18-lts"
-    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
-    # Use custom domain for backend API
-    "REACT_APP_BACKEND_URL"          = "https://api.${var.custom_domain}"
-    "NODE_ENV"                       = "production"
+    "DOCKER_REGISTRY_SERVER_URL"      = "https://${azurerm_container_registry.frontend.login_server}"
+    "DOCKER_REGISTRY_SERVER_USERNAME" = azurerm_container_registry.frontend.admin_username
+    "DOCKER_REGISTRY_SERVER_PASSWORD" = azurerm_container_registry.frontend.admin_password
+    "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
+    "WEBSITES_PORT" = "80"
+    "NODE_ENV" = "production"
   }
 
   tags = local.common_tags
