@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Checkout
@@ -44,13 +45,23 @@ jobs:
         run: |
           cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
           
-          # Create package.json for production with serve (at root level)
+          # Check if build directory and index.html exist
+          echo "Checking build directory structure:"
+          ls -la build/
+          if [ -f "build/index.html" ]; then
+            echo "✅ index.html found in build directory"
+          else
+            echo "❌ index.html NOT found in build directory"
+            exit 1
+          fi
+          
+          # Create package.json for production with serve
           cat > package.json << 'EOF'
           {
             "name": "devinsights-frontend",
             "version": "1.0.0",
             "scripts": {
-              "start": "serve -s build -p 8080"
+              "start": "serve -s build -l 8080 --single"
             },
             "dependencies": {
               "serve": "^14.2.1"
@@ -61,22 +72,30 @@ jobs:
           }
           EOF
           
-          # Create .deployment file to prevent Azure from trying to build
-          cat > .deployment << 'EOF'
-          [config]
-          SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          # Alternative: Copy build contents to root and serve from root
+          echo "Creating alternative package structure..."
+          mkdir -p alt-package
+          cp -r build/* alt-package/
+          cat > alt-package/package.json << 'EOF'
+          {
+            "name": "devinsights-frontend",
+            "version": "1.0.0",
+            "scripts": {
+              "start": "serve -s . -l 8080 --single"
+            },
+            "dependencies": {
+              "serve": "^14.2.1"
+            },
+            "engines": {
+              "node": "18.x"
+            }
+          }
           EOF
           
-          # Create a simple startup script (optional, as npm start should work)
-          cat > startup.sh << 'EOF'
-          #!/bin/bash
-          cd /home/site/wwwroot
-          npm start
-          EOF
-          chmod +x startup.sh
-          
-          # Zip everything including the build folder
-          zip -r release.zip build package.json .deployment startup.sh -x "*.git*" "node_modules/*" ".env*" "src/*" "public/*"
+          # Create the zip from alternative structure (serve from root)
+          cd alt-package
+          zip -r ../release.zip . -x "*.git*" "node_modules/*" ".env*"
+          cd ..
           
           echo "✅ Deployment package created successfully"
           ls -la release.zip
