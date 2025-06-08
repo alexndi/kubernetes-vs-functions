@@ -51,13 +51,3 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           images: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
-
-      - name: 'Test deployment'
-        run: |
-          echo "Waiting for container to start..."
-          sleep 45
-          
-          echo "Testing frontend deployment..."
-          curl -f "https://app-devinsights-frontend.azurewebsites.net" || echo "May still be starting..."
-          
-          echo "✅ Frontend deployment completed"
