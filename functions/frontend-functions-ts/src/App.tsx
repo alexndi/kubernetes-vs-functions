@@ -1,7 +1,14 @@
-// functions/frontend-functions-ts/src/App.tsx
+// functions/frontend-functions-ts/src/App.tsx - Bulletproof solution
 import React, { useState, useEffect, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './App.css';
+
+// Global constants
+const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:7071/api';
 
 // Define types for our data structures
 interface Post {
@@ -128,8 +135,6 @@ function BlogPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'https://api.devinsights.site';
-  
   const fetchPosts = useCallback(async (selectedCategory: string): Promise<void> => {
     setLoading(true);
     setError(null);
@@ -149,7 +154,7 @@ function BlogPage() {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL]);
+  }, []);
 
   useEffect(() => {
     if (categoryName) {
@@ -185,15 +190,13 @@ function BlogPage() {
   );
 }
 
-// Post Detail Page Component
+// Post Detail Page Component with Markdown Rendering
 function PostDetailPage() {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'https://api.devinsights.site';
   
   const fetchPostDetail = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
@@ -214,7 +217,7 @@ function PostDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [BACKEND_URL]);
+  }, []);
 
   useEffect(() => {
     if (postId) {
@@ -246,10 +249,47 @@ function PostDetailPage() {
           <span className="post-date">{new Date(selectedPost.date).toLocaleDateString()}</span>
         </div>
         
-        <div className="post-content">
-          {selectedPost.content?.split('\n').map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
-          ))}
+        <div className="post-content markdown-content">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              code(props: any) {
+                const { children, className, node, ...rest } = props;
+                const match = /language-(\w+)/.exec(className || '');
+                const isCodeBlock = match && !props.inline;
+                
+                if (isCodeBlock) {
+                  return (
+                    <div className="code-block-wrapper">
+                      <div className="code-language-label">{match[1]}</div>
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        customStyle={{
+                          margin: 0,
+                          borderRadius: '0 0 8px 8px',
+                          padding: '1.5rem',
+                          fontSize: '0.9rem',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <code className="inline-code" {...rest}>
+                    {children}
+                  </code>
+                );
+              }
+            }}
+          >
+            {selectedPost.content || ''}
+          </ReactMarkdown>
         </div>
         
         <div className="post-tags">

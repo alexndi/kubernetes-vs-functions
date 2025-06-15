@@ -9,7 +9,7 @@ export interface KeycloakConfig {
   
   export function getKeycloakConfig(): KeycloakConfig {
     return {
-      url: process.env.KEYCLOAK_URL || 'http://192.168.49.2:30387',
+      url: process.env.KEYCLOAK_URL || 'http://localhost:8080',
       realm: process.env.KEYCLOAK_REALM || 'it-blog-realm',
       clientId: process.env.KEYCLOAK_CLIENT_ID || 'it-blog-client',
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || ''

@@ -19,5 +19,11 @@
         "maxConcurrentRequests": 100,
         "dynamicThrottlesEnabled": true
       }
+    },
+    "host": {
+      "CORS": {
+        "allowedOrigins": ["*"],
+        "supportCredentials": false
+      }
     }
   }

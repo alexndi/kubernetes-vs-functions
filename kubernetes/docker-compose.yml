@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (shared by both app and Keycloak)
+  postgres:
+    image: postgres:15-alpine
+    container_name: devinsights-postgres
+    environment:
+      POSTGRES_USER: bloguser
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: itblog
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloguser -d itblog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devinsights-network
+
+  # Keycloak Authentication Server with Auto-Import
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.0
+    container_name: devinsights-keycloak
+    command: 
+      - start-dev
+      - --import-realm
+      - --db=postgres
+      - --db-url=jdbc:postgresql://postgres:5432/itblog
+      - --db-username=bloguser
+      - --db-password=password
+      - --hostname-strict=false
+      - --http-enabled=true
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/itblog
+      KC_DB_USERNAME: bloguser
+      KC_DB_PASSWORD: password
+      KC_HOSTNAME_STRICT: 'false'
+      KC_HTTP_ENABLED: 'true'
+      KC_HEALTH_ENABLED: 'true'
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak-config:/opt/keycloak/data/import
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - devinsights-network
+
+  # Backend API (Express with TypeScript)
+  backend-api:
+    build:
+      context: ./backend-kubernetes-ts
+      dockerfile: Dockerfile
+    container_name: devinsights-backend
+    environment:
+      # Database configuration
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: itblog
+      POSTGRES_USER: bloguser
+      POSTGRES_PASSWORD: password
+      
+      # Keycloak configuration
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: it-blog-realm
+      KEYCLOAK_CLIENT_ID: it-blog-client
+      
+      # Application configuration
+      NODE_ENV: development
+      PORT: 3001
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - devinsights-network
+
+  # Frontend (React with TypeScript)
+  frontend:
+    build:
+      context: ./frontend-kubernetes-ts
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_BACKEND_URL: http://localhost:3001/api
+        REACT_APP_KEYCLOAK_URL: http://localhost:8080
+        REACT_APP_KEYCLOAK_REALM: it-blog-realm
+        REACT_APP_KEYCLOAK_CLIENT_ID: it-blog-client
+    container_name: devinsights-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - devinsights-network
+
+  # Database admin tool (optional)
+  db-admin:
+    image: adminer
+    container_name: devinsights-db-admin
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - devinsights-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  devinsights-network:
+    driver: bridge
