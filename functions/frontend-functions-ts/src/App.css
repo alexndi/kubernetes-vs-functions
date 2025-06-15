@@ -469,3 +469,272 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+/* Add these styles to your App.css for Prism syntax highlighting */
+
+/* Code block wrapper styling */
+.code-block-wrapper {
+  position: relative;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #1e1e1e;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid #333;
+}
+
+.code-language-label {
+  background: linear-gradient(90deg, #333, #2a2a2a);
+  color: #8a8a8a;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #444;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+}
+
+/* Inline code styling */
+.inline-code {
+  background-color: rgba(94, 146, 255, 0.15);
+  color: var(--primary-color);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.9em;
+  border: 1px solid rgba(94, 146, 255, 0.3);
+}
+
+/* Override react-syntax-highlighter styles for better integration */
+.code-block-wrapper pre {
+  margin: 0 !important;
+  background: #1e1e1e !important;
+}
+
+.code-block-wrapper code {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace !important;
+  font-size: 0.9rem !important;
+  line-height: 1.6 !important;
+}
+
+/* Scrollbar styling for code blocks */
+.code-block-wrapper pre::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar-track {
+  background-color: #2a2a2a;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+.code-block-wrapper pre::-webkit-scrollbar-thumb:hover {
+  background-color: #777;
+}
+
+/* Language-specific label colors */
+.code-block-wrapper:has([class*="language-bash"]) .code-language-label {
+  background: linear-gradient(90deg, #1a472a, #0d2818);
+  color: #4ade80;
+}
+
+.code-block-wrapper:has([class*="language-typescript"]) .code-language-label,
+.code-block-wrapper:has([class*="language-javascript"]) .code-language-label {
+  background: linear-gradient(90deg, #3b2d54, #2a1f3d);
+  color: #8b5cf6;
+}
+
+.code-block-wrapper:has([class*="language-yaml"]) .code-language-label {
+  background: linear-gradient(90deg, #5b2c2c, #3d1d1d);
+  color: #f87171;
+}
+
+.code-block-wrapper:has([class*="language-python"]) .code-language-label {
+  background: linear-gradient(90deg, #2d3748, #1a202c);
+  color: #68d391;
+}
+
+.code-block-wrapper:has([class*="language-json"]) .code-language-label {
+  background: linear-gradient(90deg, #4a5568, #2d3748);
+  color: #fbb6ce;
+}
+
+/* Enhanced markdown content styling */
+.markdown-content {
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  color: var(--primary-color);
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.markdown-content h1:first-child,
+.markdown-content h2:first-child,
+.markdown-content h3:first-child {
+  margin-top: 0;
+}
+
+.markdown-content h1 {
+  font-size: 2.5rem;
+  border-bottom: 3px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.markdown-content h2 {
+  font-size: 2rem;
+  border-bottom: 2px solid rgba(94, 146, 255, 0.5);
+  padding-bottom: 0.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-content h4 {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content p {
+  margin-bottom: 1.2rem;
+  text-align: left;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 1.2rem;
+  padding-left: 2rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.markdown-content li p {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--primary-color);
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: var(--text-secondary);
+  background: linear-gradient(90deg, rgba(94, 146, 255, 0.08), rgba(94, 146, 255, 0.02));
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 1rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--header-border);
+}
+
+.markdown-content th {
+  background: linear-gradient(90deg, var(--tag-bg), rgba(94, 146, 255, 0.1));
+  color: var(--primary-color);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.markdown-content tr:hover {
+  background-color: rgba(94, 146, 255, 0.05);
+}
+
+.markdown-content tr:last-child td {
+  border-bottom: none;
+}
+
+/* Links with enhanced styling */
+.markdown-content a {
+  color: var(--primary-color);
+  text-decoration: none;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.markdown-content a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-color), var(--button-hover));
+  transition: width 0.3s ease;
+}
+
+.markdown-content a:hover::after {
+  width: 100%;
+}
+
+.markdown-content a:hover {
+  color: var(--button-hover);
+}
+
+/* Images with enhanced styling */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 2rem 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.markdown-content img:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Horizontal rules */
+.markdown-content hr {
+  border: none;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+  margin: 3rem 0;
+  border-radius: 2px;
+}
+
+/* Strong and emphasis */
+.markdown-content strong {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.markdown-content em {
+  color: var(--text-secondary);
+  font-style: italic;
+}
