@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database (shared by both app and Keycloak)
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     container_name: devinsights-postgres
@@ -21,7 +21,7 @@ services:
     networks:
       - devinsights-network
 
-  # Keycloak Authentication Server with Auto-Import
+  # Keycloak Authentication Server
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.0
     container_name: devinsights-keycloak
@@ -34,6 +34,7 @@ services:
       - --db-password=password
       - --hostname-strict=false
       - --http-enabled=true
+      - --hostname=localhost
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -44,6 +45,7 @@ services:
       KC_HOSTNAME_STRICT: 'false'
       KC_HTTP_ENABLED: 'true'
       KC_HEALTH_ENABLED: 'true'
+      KC_HOSTNAME: 'localhost'
     ports:
       - "8080:8080"
     volumes:
@@ -54,21 +56,21 @@ services:
     networks:
       - devinsights-network
 
-  # Backend API (Express with TypeScript)
+  # Backend API
   backend-api:
     build:
       context: ./backend-kubernetes-ts
       dockerfile: Dockerfile
     container_name: devinsights-backend
     environment:
-      # Database configuration
+      # Database configuration - use container name for internal communication
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_DB: itblog
       POSTGRES_USER: bloguser
       POSTGRES_PASSWORD: password
       
-      # Keycloak configuration
+      # Keycloak configuration - use container name for JWKS fetch
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_REALM: it-blog-realm
       KEYCLOAK_CLIENT_ID: it-blog-client
@@ -82,10 +84,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     networks:
       - devinsights-network
 
-  # Frontend (React with TypeScript)
+  # Frontend
   frontend:
     build:
       context: ./frontend-kubernetes-ts
@@ -98,20 +102,6 @@ services:
     container_name: devinsights-frontend
     ports:
       - "3000:80"
-    networks:
-      - devinsights-network
-
-  # Database admin tool (optional)
-  db-admin:
-    image: adminer
-    container_name: devinsights-db-admin
-    environment:
-      ADMINER_DEFAULT_SERVER: postgres
-    ports:
-      - "8081:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       - devinsights-network
 

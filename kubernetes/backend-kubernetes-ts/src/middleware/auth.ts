@@ -1,4 +1,4 @@
-// src/middleware/auth.ts - Fixed TypeScript types
+// src/middleware/auth.ts - Fixed for Docker localhost issues
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import jwksClient, { JwksClient } from 'jwks-rsa';
@@ -80,6 +80,14 @@ export class AuthMiddleware {
     });
   };
 
+  // Helper function to normalize issuer URLs for comparison
+  private normalizeIssuer(issuer: string): string {
+    // Convert docker internal URLs to localhost for comparison
+    return issuer
+      .replace('http://keycloak:8080', 'http://localhost:8080')
+      .replace('http://host.docker.internal:8080', 'http://localhost:8080');
+  }
+
   // Authentication middleware with enhanced debugging and proper types
   public authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers['authorization'];
@@ -132,13 +140,25 @@ export class AuthMiddleware {
         }
       }
       
+      // FIXED: Build expected issuer and normalize both for comparison
       const expectedIssuer = `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}`;
+      const normalizedExpected = this.normalizeIssuer(expectedIssuer);
+      const normalizedActual = this.normalizeIssuer(payload.iss || '');
+      
       console.log('Expected issuer:', expectedIssuer);
+      console.log('Normalized expected:', normalizedExpected);
+      console.log('Normalized actual:', normalizedActual);
       
       // Verify the token with the public key
       jwt.verify(token, this.getKey, { 
         algorithms: ['RS256'],
-        issuer: expectedIssuer,
+        // FIXED: Accept both container and localhost issuers
+        issuer: [
+          expectedIssuer, 
+          normalizedExpected, 
+          'http://localhost:8080/realms/it-blog-realm',
+          'http://keycloak:8080/realms/it-blog-realm'
+        ],
       }, (err, decodedToken) => {
         if (err) {
           console.error('Token verification error:', err.message);
