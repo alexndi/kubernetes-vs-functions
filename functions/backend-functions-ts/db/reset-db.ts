@@ -1,5 +1,4 @@
 // db/reset-db.ts
-import { Pool } from 'pg';
 import pool from '../config/database';
 import runMigrations from './migrations/run';
 import seed from './seed';

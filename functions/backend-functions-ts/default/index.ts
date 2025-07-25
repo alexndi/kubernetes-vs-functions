@@ -1,7 +1,7 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions";
+import { AzureFunction, Context } from "@azure/functions";
 import { ApiResponseMessage } from '../models/blog';
 
-const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
+const httpTrigger: AzureFunction = async function (context: Context): Promise<void> {
   context.log('Default route function processed a request.');
   
   const responseData: ApiResponseMessage = { 

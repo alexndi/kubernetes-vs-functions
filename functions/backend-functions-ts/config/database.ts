@@ -1,5 +1,5 @@
 // config/database.ts
-import { Pool, PoolConfig } from 'pg';
+import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
 
 dotenv.config();

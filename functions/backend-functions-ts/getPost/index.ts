@@ -1,9 +1,9 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions";
+import { AzureFunction, Context } from "@azure/functions";
 import BlogService from '../shared/blog-service';
 
 const blogService = new BlogService();
 
-const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
+const httpTrigger: AzureFunction = async function (context: Context): Promise<void> {
   context.log('Get post by ID function processed a request.');
   
   try {
