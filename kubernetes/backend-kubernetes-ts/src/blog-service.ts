@@ -1,6 +1,6 @@
 // src/blog-service.ts
 import { BlogRepository } from './repositories/blog-repository';
-import { BlogPost, PostsByCategory, PostError, PostDetail } from './models/blog';
+import { PostsByCategory, PostError, PostDetail } from './models/blog';
 
 export class BlogService {
   private repository: BlogRepository;

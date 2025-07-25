@@ -7,7 +7,7 @@ jest.mock('./services/keycloak', () => ({
   initKeycloak: jest.fn().mockResolvedValue(false),
   getKeycloak: jest.fn().mockReturnValue(null),
   login: jest.fn(),
-  logout: jest.fn()
+  logout: jest.fn(),
 }));
 
 test('renders the DevInsights title', () => {
