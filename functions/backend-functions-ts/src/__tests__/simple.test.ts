@@ -159,42 +159,26 @@ describe('Basic Azure Functions Backend Tests', () => {
     });
   });
 
-  describe('Keycloak Configuration Logic', () => {
-    it('should handle Keycloak config object', () => {
+  describe('Azure AD B2C Configuration Logic', () => {
+    it('should handle Azure AD B2C config object', () => {
       const config = {
-        url: process.env.KEYCLOAK_URL || 'http://localhost:8080',
-        realm: process.env.KEYCLOAK_REALM || 'it-blog-realm',
-        clientId: process.env.KEYCLOAK_CLIENT_ID || 'it-blog-client',
-        clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || ''
+        tenantId: process.env.AZURE_AD_B2C_TENANT_ID || 'your-tenant-id',
+        clientId: process.env.AZURE_AD_B2C_CLIENT_ID || 'your-client-id',
+        signInPolicy: process.env.AZURE_AD_B2C_SIGNIN_POLICY || 'B2C_1_signin',
+        signUpPolicy: process.env.AZURE_AD_B2C_SIGNUP_POLICY || 'B2C_1_signup'
       };
 
-      expect(config.url).toBe('http://localhost:8080');
-      expect(config.realm).toBe('it-blog-realm');
-      expect(config.clientId).toBe('it-blog-client');
+      expect(config.tenantId).toBe('your-tenant-id');
+      expect(config.signInPolicy).toBe('B2C_1_signin');
     });
 
-    it('should generate JWKS URI', () => {
-      const baseUrl = 'http://localhost:8080';
-      const realm = 'it-blog-realm';
-      const jwksUri = `${baseUrl}/realms/${realm}/protocol/openid-connect/certs`;
-
-      expect(jwksUri).toBe('http://localhost:8080/realms/it-blog-realm/protocol/openid-connect/certs');
-    });
-  });
-
-  describe('Authentication Utilities', () => {
-    it('should normalize issuer URLs', () => {
-      const dockerIssuer = 'http://keycloak:8080/realms/it-blog-realm';
-      const normalized = dockerIssuer.replace('http://keycloak:8080', 'http://localhost:8080');
-
-      expect(normalized).toBe('http://localhost:8080/realms/it-blog-realm');
-    });
-
-    it('should handle bearer token extraction', () => {
-      const authHeader = 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...';
-      const token = authHeader && authHeader.split(' ')[1];
-
-      expect(token).toBe('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...');
+    it('should generate Azure AD B2C metadata URL', () => {
+      const tenant = 'yourtenant';
+      const policy = 'B2C_1_signin';
+      const metadataUrl = `https://${tenant}.b2clogin.com/${tenant}.onmicrosoft.com/${policy}/v2.0/.well-known/openid_configuration`;
+      
+      expect(metadataUrl).toContain('b2clogin.com');
+      expect(metadataUrl).toContain(policy);
     });
   });
 
