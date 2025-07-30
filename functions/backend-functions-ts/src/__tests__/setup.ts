@@ -1,5 +1,5 @@
-// functions/backend-functions-ts/__tests__/setup.ts
-// Simple test setup
+// functions/backend-functions-ts/src/__tests__/setup.ts
+// Simple test setup - matching simplified approach
 
 // Mock environment variables
 process.env.NODE_ENV = 'test';
@@ -13,4 +13,18 @@ process.env.FRONTEND_URL = 'http://localhost:3000';
 // Global setup
 beforeEach(() => {
   jest.clearAllMocks();
+});
+
+// Suppress console logs during tests (optional)
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+beforeAll(() => {
+  console.log = jest.fn();
+  console.error = jest.fn();
+});
+
+afterAll(() => {
+  console.log = originalConsoleLog;
+  console.error = originalConsoleError;
 });

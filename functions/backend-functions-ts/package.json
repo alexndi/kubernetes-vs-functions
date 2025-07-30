@@ -1,7 +1,7 @@
 {
     "name": "blog-api-functions-ts",
     "version": "1.0.0",
-    "description": "IT Blog API implemented with Azure Functions and TypeScript",
+    "description": "IT Blog API implemented with Azure Functions and TypeScript - Simplified Testing",
     "scripts": {
       "build": "tsc",
       "watch": "tsc -w",

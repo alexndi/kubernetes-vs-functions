@@ -1,8 +1,8 @@
-// functions/backend-functions-ts/src/__tests__/simple.test.ts
+// kubernetes/backend-kubernetes-ts/src/__tests__/simple.test.ts
 
-// Test only basic functionality without complex imports - matching Kubernetes approach
+// Test only basic functionality without complex imports - matching Functions approach
 
-describe('Basic Azure Functions Backend Tests', () => {
+describe('Basic Kubernetes Backend Tests', () => {
   
   describe('Environment Variables', () => {
     it('should handle environment variables', () => {
@@ -12,8 +12,8 @@ describe('Basic Azure Functions Backend Tests', () => {
     });
 
     it('should parse port numbers', () => {
-      const port = parseInt('7071', 10);
-      expect(port).toBe(7071);
+      const port = parseInt('3001', 10);
+      expect(port).toBe(3001);
       expect(typeof port).toBe('number');
     });
   });
@@ -26,9 +26,8 @@ describe('Basic Azure Functions Backend Tests', () => {
     });
 
     it('should handle default values', () => {
-      const value: string | undefined = undefined;
-      const result = value || 'default';
-      expect(result).toBe('default');
+      const value = undefined || 'default';
+      expect(value).toBe('default');
     });
   });
 
@@ -91,44 +90,46 @@ describe('Basic Azure Functions Backend Tests', () => {
 
     it('should create API response object', () => {
       const response = {
-        message: 'IT Blog API - Azure Functions TypeScript Version with PostgreSQL',
+        message: 'IT Blog API - Kubernetes Version',
         endpoints: {
           getAllCategories: '/api/categories',
           getPostsByCategory: '/api/posts/{category}',
           getPostById: '/api/post/{id}',
-          health: '/api/health'
+          userProfile: '/api/user/profile',
+          authConfig: '/api/auth/config'
         }
       };
 
-      expect(response.message).toContain('Azure Functions');
-      expect(response.endpoints.health).toBe('/api/health');
+      expect(response.message).toContain('Kubernetes');
+      expect(response.endpoints.userProfile).toBe('/api/user/profile');
     });
   });
 
-  describe('Azure Functions Context Handling', () => {
-    it('should create mock context', () => {
-      const mockContext = {
-        log: jest.fn(),
-        res: {},
-        bindingData: {}
+  describe('Mock Express Context', () => {
+    it('should create mock request object', () => {
+      const mockRequest = {
+        method: 'GET',
+        path: '/api/posts/programming',
+        headers: {},
+        params: { category: 'programming' },
+        query: {},
+        body: {}
       };
 
-      mockContext.log('test message');
-      expect(mockContext.log).toHaveBeenCalledWith('test message');
+      expect(mockRequest.method).toBe('GET');
+      expect(mockRequest.params.category).toBe('programming');
     });
 
-    it('should handle context response', () => {
-      const mockContext = {
-        log: jest.fn(),
-        res: {
-          status: 200,
-          body: { message: 'success' }
-        },
-        bindingData: {}
+    it('should create mock response object', () => {
+      const mockResponse = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis()
       };
 
-      expect(mockContext.res.status).toBe(200);
-      expect(mockContext.res.body.message).toBe('success');
+      mockResponse.status(200).json({ message: 'success' });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'success' });
     });
   });
 

@@ -1,19 +1,22 @@
+// kubernetes/backend-kubernetes-ts/jest.config.js
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
   testMatch: [
-    '**/__tests__/**/*.test.+(ts|tsx|js)',
-    '**/*.(test|spec).+(ts|tsx|js)'
+    '**/__tests__/**/*.test.ts',
+    '**/*.test.ts'
   ],
   testPathIgnorePatterns: [
     '<rootDir>/src/__tests__/setup.ts'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.ts': ['ts-jest', {
+      isolatedModules: true
+    }]
   },
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
+    'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/__tests__/**',
     '!src/db/migrations/**',
@@ -22,11 +25,10 @@ module.exports = {
     '!src/app.ts'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   testTimeout: 10000,
   clearMocks: true,
   resetMocks: true,
-  restoreMocks: true
+  restoreMocks: true,
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts']
 };
