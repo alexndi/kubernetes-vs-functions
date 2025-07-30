@@ -9,13 +9,18 @@
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true,
       "resolveJsonModule": true,
-      "sourceMap": true
+      "sourceMap": true,
+      "declaration": true,
+      "types": ["node", "jest", "@azure/functions"]
     },
     "include": [
       "**/*.ts"
     ],
     "exclude": [
       "node_modules",
-      "dist"
+      "dist",
+      "**/*.test.ts",
+      "**/__tests__/**",
+      "coverage"
     ]
   }
