@@ -1,8 +1,61 @@
-# terraform/services.tf
+# terraform-functions/main.tf
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+  subscription_id = var.subscription_id
+  skip_provider_registration = true
+}
+
+# Data source for current Azure client
+data "azurerm_client_config" "current" {}
+
+# Local values for consistent naming and tagging
+locals {
+  # Naming components
+  project_prefix = "nbu"
+  environment    = "prod"
+  workload       = "blog"
+  
+  # Common naming pattern: {project}-{workload}-{component}
+  base_name = "${local.project_prefix}-${local.workload}"
+  
+  # Common tags applied to all resources
+  common_tags = merge({
+    Project      = "NBU DevInsights Blog"
+    Environment  = title(local.environment)
+    Workload     = title(local.workload)
+    ManagedBy    = "Terraform"
+    Architecture = "Serverless"
+    CreatedBy    = "nbu-terraform"
+    DeployedWith = "Azure Functions"
+    CostCenter   = "NBU-IT"
+  }, var.additional_tags)
+}
+
+# Main Resource Group
+resource "azurerm_resource_group" "main" {
+  name     = "rg-${local.base_name}"
+  location = var.location
+
+  tags = local.common_tags
+}
 
 # Storage Account for Azure Functions
 resource "azurerm_storage_account" "functions" {
-  name                     = "stfuncdevinsights"
+  name                     = "st${local.project_prefix}func"
   resource_group_name      = azurerm_resource_group.main.name
   location                 = azurerm_resource_group.main.location
   account_tier             = "Standard"
@@ -14,7 +67,7 @@ resource "azurerm_storage_account" "functions" {
 
 # Azure Container Registry for Frontend Docker Images
 resource "azurerm_container_registry" "frontend" {
-  name                = "appdevinsightsfrontend"
+  name                = "acr${local.project_prefix}frontend"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   sku                 = "Basic"
@@ -23,9 +76,9 @@ resource "azurerm_container_registry" "frontend" {
   tags = local.common_tags
 }
 
-# PostgreSQL Flexible Server (Public with Azure Services access)
+# PostgreSQL Flexible Server
 resource "azurerm_postgresql_flexible_server" "main" {
-  name                   = "psql-devinsights"
+  name                   = "psql-${local.base_name}"
   resource_group_name    = azurerm_resource_group.main.name
   location               = azurerm_resource_group.main.location
   version                = "15"
@@ -33,8 +86,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
   administrator_password = var.postgres_admin_password
   zone                   = "1"
 
-  storage_mb                   = var.postgres_storage_mb
-  sku_name                     = var.postgres_sku_name
+  storage_mb                   = 32768
+  sku_name                     = B_Standard_B1ms
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
   public_network_access_enabled = true
@@ -52,7 +105,7 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "azure_services" {
 
 # PostgreSQL Database
 resource "azurerm_postgresql_flexible_server_database" "main" {
-  name      = "devinsights_blog"
+  name      = var.postgres_database_name
   server_id = azurerm_postgresql_flexible_server.main.id
   collation = "en_US.utf8"
   charset   = "utf8"
@@ -60,19 +113,19 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
 
 # Application Insights
 resource "azurerm_application_insights" "main" {
-  name                = "ai-devinsights"
+  name                = "appi-${local.base_name}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   application_type    = "web"
-  retention_in_days   = 90
-  workspace_id        = azurerm_log_analytics_workspace.main.id  # ✅ Required - can't be removed
+  retention_in_days   = 30
+  workspace_id        = azurerm_log_analytics_workspace.main.id
 
   tags = local.common_tags
 }
 
 # Log Analytics Workspace
 resource "azurerm_log_analytics_workspace" "main" {
-  name                = "law-devinsights"
+  name                = "law-${local.base_name}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   sku                 = "PerGB2018"
@@ -83,7 +136,7 @@ resource "azurerm_log_analytics_workspace" "main" {
 
 # Service Plan for Azure Functions (Consumption)
 resource "azurerm_service_plan" "functions" {
-  name                = "asp-devinsights-functions"
+  name                = "asp-${local.base_name}-func"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
@@ -94,18 +147,18 @@ resource "azurerm_service_plan" "functions" {
 
 # Service Plan for App Service (Frontend)
 resource "azurerm_service_plan" "frontend" {
-  name                = "asp-devinsights-frontend"
+  name                = "asp-${local.base_name}-fe"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
-  sku_name            = "B1"  # Basic plan - you can change this to F1 for free tier
+  sku_name            = "B1"  # Basic plan
   
   tags = local.common_tags
 }
 
 # Linux Function App
 resource "azurerm_linux_function_app" "main" {
-  name                = "func-devinsights"
+  name                = "func-${local.base_name}-api"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   service_plan_id     = azurerm_service_plan.functions.id
@@ -139,7 +192,6 @@ resource "azurerm_linux_function_app" "main" {
     }
   }
 
-  # Initial app settings (secrets will be injected by GitHub Actions)
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME"                = "node"
     "WEBSITE_NODE_DEFAULT_VERSION"            = "~18"
@@ -149,16 +201,17 @@ resource "azurerm_linux_function_app" "main" {
     "APPINSIGHTS_INSTRUMENTATIONKEY"          = azurerm_application_insights.main.instrumentation_key
     "APPLICATIONINSIGHTS_CONNECTION_STRING"   = azurerm_application_insights.main.connection_string
     
-    # Database settings (GitHub Actions will update these with real secrets)
+    # Database settings
     "POSTGRES_HOST"     = azurerm_postgresql_flexible_server.main.fqdn
     "POSTGRES_PORT"     = "5432"
     "POSTGRES_DB"       = azurerm_postgresql_flexible_server_database.main.name
     "POSTGRES_USER"     = var.postgres_admin_username
-    "POSTGRES_PASSWORD" = "YourSecurePassword123!"
+    "POSTGRES_PASSWORD" = var.postgres_admin_password
     
-    # Remove circular dependency - will be updated after frontend is created
-    "FRONTEND_URL"      = "https://app-devinsights-frontend.azurewebsites.net"
+    # Application settings
+    "FRONTEND_URL"      = "https://app-${local.base_name}-fe.azurewebsites.net"
     "NODE_ENV"          = "production"
+    "DB_MIGRATION_KEY"  = var.db_migration_key
   }
 
   tags = local.common_tags
@@ -166,7 +219,7 @@ resource "azurerm_linux_function_app" "main" {
 
 # Linux Web App for Frontend (Docker-enabled)
 resource "azurerm_linux_web_app" "frontend" {
-  name                = "app-devinsights-frontend"
+  name                = "app-${local.base_name}-fe"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   service_plan_id     = azurerm_service_plan.frontend.id
@@ -176,14 +229,13 @@ resource "azurerm_linux_web_app" "frontend" {
   }
 
   site_config {
-    always_on           = false  # Set to true if using paid plans
+    always_on           = false
     ftps_state          = "Disabled"
     http2_enabled       = true
     minimum_tls_version = "1.2"
 
-    # Configure for Docker container deployment
     application_stack {
-      docker_image_name   = "${azurerm_container_registry.frontend.login_server}/devinsights-frontend:latest"
+      docker_image_name   = "${azurerm_container_registry.frontend.login_server}/nbu-blog-frontend:latest"
       docker_registry_url = "https://${azurerm_container_registry.frontend.login_server}"
     }
   }
@@ -202,9 +254,9 @@ resource "azurerm_linux_web_app" "frontend" {
 
 # Action Group for Alerts
 resource "azurerm_monitor_action_group" "main" {
-  name                = "ag-devinsights"
+  name                = "ag-${local.base_name}"
   resource_group_name = azurerm_resource_group.main.name
-  short_name          = "devinsights"
+  short_name          = "nbu-blog"
 
   email_receiver {
     name          = "admin"
@@ -216,7 +268,7 @@ resource "azurerm_monitor_action_group" "main" {
 
 # Function App Availability Alert
 resource "azurerm_monitor_metric_alert" "function_app_availability" {
-  name                = "alert-function-availability"
+  name                = "alert-${local.base_name}-func-avail"
   resource_group_name = azurerm_resource_group.main.name
   scopes              = [azurerm_linux_function_app.main.id]
   description         = "Function App availability is below threshold"

@@ -1,4 +1,4 @@
-# terraform/state-bootstrap/main.tf
+# state-bootstrap/main.tf
 terraform {
   required_version = ">= 1.0"
   required_providers {
@@ -15,20 +15,31 @@ provider "azurerm" {
   skip_provider_registration = true
 }
 
+# Local values for consistent naming
+locals {
+  project_prefix = "nbu"
+  workload       = "blog"
+  base_name      = "${local.project_prefix}-${local.workload}"
+  
+  common_tags = {
+    Project    = "NBU DevInsights Blog"
+    ManagedBy  = "Terraform"
+    Purpose    = "Terraform State Storage"
+    University = "New Bulgarian University"
+  }
+}
+
 # Resource Group for Terraform State
 resource "azurerm_resource_group" "terraform_state" {
-  name     = "rg-terraform-state-fc"
+  name     = "rg-${local.base_name}-tfstate"
   location = "North Europe"
 
-  tags = {
-    Purpose   = "Terraform State Storage"
-    ManagedBy = "Terraform"
-  }
+  tags = local.common_tags
 }
 
 # Storage Account for Terraform State
 resource "azurerm_storage_account" "terraform_state" {
-  name                     = "stterraformdevinsights"
+  name                     = "stnbuterraformstate"
   resource_group_name      = azurerm_resource_group.terraform_state.name
   location                 = azurerm_resource_group.terraform_state.location
   account_tier             = "Standard"
@@ -39,26 +50,19 @@ resource "azurerm_storage_account" "terraform_state" {
     versioning_enabled = true
   }
 
-  tags = {
-    Purpose   = "Terraform State Storage"
-    ManagedBy = "Terraform"
-  }
+  tags = local.common_tags
 }
 
-# Storage Container for Terraform State
-resource "azurerm_storage_container" "terraform_state" {
-  name                  = "tfstate"
+# Storage Container for Functions State
+resource "azurerm_storage_container" "functions_state" {
+  name                  = "functions-tfstate"
   storage_account_name  = azurerm_storage_account.terraform_state.name
   container_access_type = "private"
 }
 
-# Outputs
-output "backend_config" {
-  description = "Backend configuration for main Terraform deployment"
-  value = {
-    resource_group_name  = azurerm_resource_group.terraform_state.name
-    storage_account_name = azurerm_storage_account.terraform_state.name
-    container_name       = azurerm_storage_container.terraform_state.name
-    key                  = "devinsights.tfstate"
-  }
+# Storage Container for Kubernetes State
+resource "azurerm_storage_container" "kubernetes_state" {
+  name                  = "kubernetes-tfstate"
+  storage_account_name  = azurerm_storage_account.terraform_state.name
+  container_access_type = "private"
 }
