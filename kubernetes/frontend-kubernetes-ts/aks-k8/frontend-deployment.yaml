@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: blogacrcw3c.azurecr.io/blog-frontend:latest  # Replace XXXX with your ACR suffix
+        image: acrnbuk8s.azurecr.io/nbu-blog-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
@@ -65,4 +65,3 @@ spec:
     targetPort: 80
     name: http
   type: ClusterIP
----

@@ -20,9 +20,6 @@ db_migration_key = "nbu-secure-migration-key-2025"
 
 # Additional Tags
 additional_tags = {
-  Owner       = "NBU Team"
   Purpose     = "DevInsights Blog Platform"
-  Contact     = "admin@nbu-devinsights.site"
   University  = "New Bulgarian University"
-  Department  = "Computer Science"
 }

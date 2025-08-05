@@ -1,95 +1,92 @@
-name: Build and Deploy to AKS
+name: Deploy to AKS
 
 on:
-  workflow_dispatch:  # Manual trigger only
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches: [main]
+    paths:
+      - 'kubernetes/backend-kubernetes-ts/**'
+      - 'kubernetes/frontend-kubernetes-ts/**'
 
 env:
-  ACR_NAME: blogacrcw3c
-  RESOURCE_GROUP: rg-blog-aks
-  CLUSTER_NAME: blog-aks-cluster
+  # Azure Configuration
+  AZURE_SUBSCRIPTION_ID: "74be1b16-c7f6-4ebd-88d0-c1754bef3200"
   
-  # Application URLs
-  BACKEND_URL: https://devinsights.site/api
-  KEYCLOAK_URL: https://devinsights.site/auth
-  KEYCLOAK_REALM: it-blog-realm
-  KEYCLOAK_CLIENT_ID: it-blog-client
+  # NBU Resource
+  RESOURCE_GROUP: "rg-nbu-blog-k8s"
+  AKS_CLUSTER: "aks-nbu-blog"
+  CONTAINER_REGISTRY: "acrnbuk8s"
+  
+  # Application Configuration
+  CUSTOM_DOMAIN: "devinsights.site"
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Check for changes
-      uses: dorny/paths-filter@v2
-      id: changes
-      with:
-        filters: |
-          backend:
-            - 'kubernetes/backend-kubernetes-ts/**'
-          frontend:
-            - 'kubernetes/frontend-kubernetes-ts/**'
-
-    - name: Setup Node.js
-      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
     - name: Azure Login
-      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Login to Azure Container Registry
-      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
-      run: az acr login --name ${{ env.ACR_NAME }}
+      run: az acr login --name ${{ env.CONTAINER_REGISTRY }}
 
-    - name: Build and Push Backend
-      if: steps.changes.outputs.backend == 'true'
+    - name: Build and Push Backend Image
       run: |
-        echo "Building backend..."
         cd kubernetes/backend-kubernetes-ts
-        docker build -t ${{ env.ACR_NAME }}.azurecr.io/blog-api:latest .
-        docker push ${{ env.ACR_NAME }}.azurecr.io/blog-api:latest
+        docker build -t ${{ env.CONTAINER_REGISTRY }}.azurecr.io/nbu-blog-api:${{ github.sha }} .
+        docker push ${{ env.CONTAINER_REGISTRY }}.azurecr.io/nbu-blog-api:${{ github.sha }}
 
-    - name: Build and Push Frontend
-      if: steps.changes.outputs.frontend == 'true'
+    - name: Build and Push Frontend Image
       run: |
-        echo "Building frontend..."
         cd kubernetes/frontend-kubernetes-ts
         docker build \
-          --build-arg REACT_APP_BACKEND_URL=${{ env.BACKEND_URL }} \
-          --build-arg REACT_APP_KEYCLOAK_URL=${{ env.KEYCLOAK_URL }} \
-          --build-arg REACT_APP_KEYCLOAK_REALM=${{ env.KEYCLOAK_REALM }} \
-          --build-arg REACT_APP_KEYCLOAK_CLIENT_ID=${{ env.KEYCLOAK_CLIENT_ID }} \
-          -t ${{ env.ACR_NAME }}.azurecr.io/blog-frontend:latest \
+          --build-arg REACT_APP_BACKEND_URL=https://api.${{ env.CUSTOM_DOMAIN }}/api \
+          --build-arg REACT_APP_KEYCLOAK_URL=https://${{ env.CUSTOM_DOMAIN }}/auth \
+          --build-arg REACT_APP_KEYCLOAK_REALM=it-blog-realm \
+          --build-arg REACT_APP_KEYCLOAK_CLIENT_ID=it-blog-client \
+          -t ${{ env.CONTAINER_REGISTRY }}.azurecr.io/nbu-blog-frontend:${{ github.sha }} \
           .
-        docker push ${{ env.ACR_NAME }}.azurecr.io/blog-frontend:latest
+        docker push ${{ env.CONTAINER_REGISTRY }}.azurecr.io/nbu-blog-frontend:${{ github.sha }}
+
+    - name: Get AKS Credentials
+      run: |
+        az aks get-credentials \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --name ${{ env.AKS_CLUSTER }} \
+          --overwrite-existing
+
+    - name: Update Image Tags in Manifests
+      run: |
+        # Update backend image tag
+        sed -i "s|acrnbuk8s\.azurecr\.io/nbu-blog-api:.*|acrnbuk8s.azurecr.io/nbu-blog-api:${{ github.sha }}|g" kubernetes/backend-kubernetes-ts/aks-k8/*.yaml
+        
+        # Update frontend image tag
+        sed -i "s|acrnbuk8s\.azurecr\.io/nbu-blog-frontend:.*|acrnbuk8s.azurecr.io/nbu-blog-frontend:${{ github.sha }}|g" kubernetes/frontend-kubernetes-ts/aks-k8/*.yaml
 
     - name: Deploy to AKS
-      if: steps.changes.outputs.backend == 'true' || steps.changes.outputs.frontend == 'true'
       run: |
-        echo "Deploying to AKS..."
-        # Get AKS credentials
-        az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --overwrite-existing
+        # Deploy all backend components (including Keycloak)
+        kubectl apply -f kubernetes/backend-kubernetes-ts/aks-k8/
         
-        # Restart only changed deployments
-        if [ "${{ steps.changes.outputs.backend }}" == "true" ]; then
-          echo "Restarting backend deployment..."
-          kubectl rollout restart deployment/blog-api
-        fi
-        
-        if [ "${{ steps.changes.outputs.frontend }}" == "true" ]; then
-          echo "Restarting frontend deployment..."
-          kubectl rollout restart deployment/frontend
-        fi
-        
-        echo "Deployment initiated successfully!"
+        # Deploy frontend
+        kubectl apply -f kubernetes/frontend-kubernetes-ts/aks-k8/
 
-    - name: No Changes
-      if: steps.changes.outputs.backend == 'false' && steps.changes.outputs.frontend == 'false'
-      run: echo "No changes detected. Skipping build and deployment."
+    - name: Wait for Deployments
+      run: |
+        kubectl rollout status deployment/blog-api --timeout=300s
+        kubectl rollout status deployment/frontend --timeout=300s
+        kubectl rollout status deployment/keycloak --timeout=600s
+
+    - name: Show Status
+      run: |
+        echo "🎉 Deployment Complete!"
+        echo ""
+        kubectl get pods
+        kubectl get svc
+        kubectl get ingress

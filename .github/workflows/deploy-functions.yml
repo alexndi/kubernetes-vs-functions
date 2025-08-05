@@ -1,0 +1,95 @@
+name: Deploy to Azure Functions
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches: [main]
+    paths:
+      - 'functions/backend-functions-ts/**'
+      - 'functions/frontend-functions-ts/**'
+
+env:
+  AZURE_FUNCTIONAPP_NAME: 'func-nbu-blog-api'
+  AZURE_WEBAPP_NAME: 'app-nbu-blog-fe'
+  REGISTRY_NAME: 'acrnbufrontend'
+  IMAGE_NAME: 'nbu-blog-frontend'
+  NODE_VERSION: '18.x'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: functions
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'functions/backend-functions-ts/package.json'
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Build and Deploy Backend Functions
+      run: |
+        cd functions/backend-functions-ts
+        npm install
+        npm run build
+        npm prune --production
+
+    - name: Deploy Backend to Azure Functions
+      uses: Azure/functions-action@v1
+      with:
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+        package: functions/backend-functions-ts
+        publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+
+    - name: Login to Azure Container Registry
+      run: az acr login --name ${{ env.REGISTRY_NAME }}
+
+    - name: Build and Push Frontend Docker Image
+      run: |
+        cd functions/frontend-functions-ts
+        
+        # Build the Docker image with commit SHA
+        docker build \
+          --build-arg REACT_APP_BACKEND_URL=https://api.devinsights.site/api \
+          -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          .
+        
+        # Push the image
+        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+    - name: Deploy Frontend to App Service
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        images: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+    - name: Test Deployments
+      run: |
+        sleep 30
+        curl -f "https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net/api/health" || exit 1
+        echo "✅ Functions deployment successful"
+
+    - name: Show Deployment Summary
+      run: |
+        echo "🎉 NBU DevInsights Functions Deployment Summary"
+        echo "============================================="
+        echo "✅ Backend Functions: ${{ env.AZURE_FUNCTIONAPP_NAME }}"
+        echo "✅ Frontend App: ${{ env.AZURE_WEBAPP_NAME }}"
+        echo "✅ Frontend Image: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+        echo ""
+        echo "🔗 Application URLs:"
+        echo "   🌐 Frontend: https://devinsights.site"
+        echo "   🔗 API: https://api.devinsights.site"
+        echo ""
+        echo "🔗 Azure URLs:"
+        echo "   🌐 Frontend: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+        echo "   🔗 API: https://${{ env.AZURE_FUNCTIONAPP_NAME }}.azurewebsites.net"

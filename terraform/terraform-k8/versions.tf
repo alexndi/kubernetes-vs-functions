@@ -1,9 +1,14 @@
+# terraform-k8/versions.tf
 terraform {
+  required_version = ">= 1.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">=3.0.0"
+      version = "~> 4.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
     }
   }
-  required_version = ">= 1.0.0"
 }

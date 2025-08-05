@@ -8,19 +8,19 @@ spec:
       restartPolicy: Never
       containers:
       - name: migrate
-        image: blogacrcw3c.azurecr.io/blog-api:latest  # Replace XXXX
+        image: acrnbuk8s.azurecr.io/nbu-blog-api:latest
         command: ["npm", "run", "migrate"]
         env:
         - name: POSTGRES_HOST
-          value: "blog-postgres-cw3c.postgres.database.azure.com"  # Replace XXXX
+          value: "psql-nbu-blog-k8s.postgres.database.azure.com"
         - name: POSTGRES_PORT
           value: "5432"
         - name: POSTGRES_DB
-          value: "postgres"
+          value: "nbu_devinsights_blog"
         - name: POSTGRES_USER
-          value: "pgadmin"
+          value: "nbuadmin"
         - name: POSTGRES_PASSWORD
-          value: "blogpassword"  # Your actual password
+          value: "NbuSecurePassword123!"
         - name: NODE_ENV
           value: "production"
       backoffLimit: 3

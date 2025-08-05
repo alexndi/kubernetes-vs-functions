@@ -36,11 +36,11 @@ spec:
           - name: KC_DB
             value: "postgres"
           - name: KC_DB_URL
-            value: "jdbc:postgresql://blog-postgres-cw3c.postgres.database.azure.com:5432/keycloak"
+            value: "jdbc:postgresql://psql-nbu-blog-k8s.postgres.database.azure.com:5432/keycloak"  # Updated NBU PostgreSQL
           - name: KC_DB_USERNAME
-            value: "pgadmin"
+            value: "nbuadmin"
           - name: KC_DB_PASSWORD
-            value: "blogpassword"
+            value: "NbuSecurePassword123!"
           - name: KC_DB_SCHEMA
             value: "public"
           - name: KC_DB_URL_PROPERTIES
@@ -155,4 +155,3 @@ spec:
     targetPort: 8080
     name: http
   type: ClusterIP
----

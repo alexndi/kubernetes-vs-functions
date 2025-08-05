@@ -1,51 +1,62 @@
-# variables.tf
-variable "resource_group_name" {
+# terraform-k8/variables.tf
+
+variable "subscription_id" {
+  description = "Azure subscription ID for NBU deployment"
   type        = string
-  description = "The name of the resource group"
 }
 
 variable "location" {
+  description = "Azure region for NBU resource deployment"
   type        = string
-  description = "The Azure Region where resources should be created"
+  default     = "North Europe"
 }
 
-variable "cluster_name" {
+variable "custom_domain" {
+  description = "Custom domain for the NBU application"
   type        = string
-  description = "The name of the AKS cluster"
 }
 
-variable "dns_prefix" {
-  type        = string
-  description = "DNS prefix for the cluster"
-}
-
+# AKS Configuration
 variable "node_count" {
+  description = "The number of nodes in the default AKS node pool"
   type        = number
-  description = "The number of nodes in the AKS cluster"
-  default     = 1
+  default     = 2
 }
 
 variable "vm_size" {
+  description = "The size of the Virtual Machine for AKS nodes"
   type        = string
-  description = "The size of the Virtual Machine"
   default     = "Standard_B2s"
 }
 
-variable "environment" {
-  type        = string
-  description = "Environment tag for resources"
-  default     = "development"
-}
-
-# PostgreSQL variables
+# PostgreSQL Configuration
 variable "postgres_admin_username" {
+  description = "PostgreSQL administrator username"
   type        = string
-  description = "PostgreSQL admin username"
-  default     = "pgadmin"
+  default     = "nbuadmin"
 }
 
 variable "postgres_admin_password" {
+  description = "PostgreSQL administrator password"
   type        = string
-  description = "PostgreSQL admin password"
   sensitive   = true
+}
+
+variable "postgres_database_name" {
+  description = "PostgreSQL database name for the blog application"
+  type        = string
+  default     = "nbu_devinsights_blog"
+}
+
+# Application Configuration
+variable "alert_email_address" {
+  description = "Email address for monitoring alerts"
+  type        = string
+}
+
+# Additional Tags
+variable "additional_tags" {
+  description = "Additional tags to apply to NBU resources"
+  type        = map(string)
+  default     = {}
 }
