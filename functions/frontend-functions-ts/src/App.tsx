@@ -1,4 +1,4 @@
-// functions/frontend-functions-ts/src/App.tsx - Bulletproof solution
+// functions/frontend-functions-ts/src/App.tsx - Azure B2C version
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BrowserRouter as Router,
@@ -7,11 +7,13 @@ import {
   Link,
   useNavigate,
   useParams,
+  Navigate,
 } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import azureB2C from './services/azure-b2c';
 import './App.css';
 
 // Global constants
@@ -28,35 +30,140 @@ interface Post {
   content?: string;
 }
 
+interface UserProfile {
+  sub: string;
+  name?: string;
+  email?: string;
+  given_name?: string;
+  family_name?: string;
+}
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Initialize Azure B2C
+    const initAuth = async () => {
+      try {
+        await azureB2C.initialize();
+        const authenticated = azureB2C.isAuthenticated();
+        setIsAuthenticated(authenticated);
+        
+        if (authenticated) {
+          const account = azureB2C.getAccount();
+          if (account) {
+            setUser({
+              sub: account.localAccountId || account.homeAccountId,
+              name: account.name,
+              email: account.username,
+              given_name: account.name?.split(' ')[0],
+              family_name: account.name?.split(' ')[1]
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      await azureB2C.login();
+      setIsAuthenticated(true);
+      const account = azureB2C.getAccount();
+      if (account) {
+        setUser({
+          sub: account.localAccountId || account.homeAccountId,
+          name: account.name,
+          email: account.username,
+          given_name: account.name?.split(' ')[0],
+          family_name: account.name?.split(' ')[1]
+        });
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await azureB2C.logout();
+      setIsAuthenticated(false);
+      setUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
   return (
     <Router>
       <div className="App azure-theme">
-        <AppContent />
+        <AppContent 
+          isAuthenticated={isAuthenticated}
+          user={user}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+        />
       </div>
     </Router>
   );
 }
 
 // Separate AppContent component that uses the Router context
-function AppContent() {
+function AppContent({ isAuthenticated, user, onLogin, onLogout }: {
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  onLogin: () => void;
+  onLogout: () => void;
+}) {
   return (
     <>
-      <AppHeader />
+      <AppHeader 
+        isAuthenticated={isAuthenticated}
+        user={user}
+        onLogin={onLogin}
+        onLogout={onLogout}
+      />
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/category/:categoryName" element={<BlogPage />} />
-          <Route path="/post/:postId" element={<PostDetailPage />} />
+          <Route path="/category/:categoryName" element={<BlogPage isAuthenticated={isAuthenticated} />} />
+          <Route path="/post/:postId" element={<PostDetailPage isAuthenticated={isAuthenticated} />} />
+          <Route
+            path="/profile"
+            element={
+              isAuthenticated ? (
+                <ProfilePage user={user} />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
         </Routes>
       </main>
-      <AppFooter />
+      <AppFooter isAuthenticated={isAuthenticated} user={user} />
     </>
   );
 }
 
 // Header component with navigation
-function AppHeader() {
+function AppHeader({ isAuthenticated, user, onLogin, onLogout }: {
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  onLogin: () => void;
+  onLogout: () => void;
+}) {
   return (
     <header className="App-header">
       <div className="logo">
@@ -81,10 +188,25 @@ function AppHeader() {
         <Link to="/category/security">
           <button>Security</button>
         </Link>
+        {isAuthenticated && (
+          <Link to="/profile">
+            <button>Profile</button>
+          </Link>
+        )}
       </nav>
 
       <div className="auth-container">
-        <button className="login-button azure-ad">Login with Microsoft</button>
+        <button 
+          className="login-button azure-ad"
+          onClick={isAuthenticated ? onLogout : onLogin}
+        >
+          {isAuthenticated ? 'Logout' : 'Login with Azure'}
+        </button>
+        {isAuthenticated && user && (
+          <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#90EE90' }}>
+            ✓ {user.name || user.email || 'Authenticated'}
+          </span>
+        )}
       </div>
     </header>
   );
@@ -134,7 +256,7 @@ function HomePage() {
 }
 
 // Blog Page Component (for category listings)
-function BlogPage() {
+function BlogPage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { categoryName } = useParams<{ categoryName: string }>();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -146,7 +268,16 @@ function BlogPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/posts/${selectedCategory}`);
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      
+      if (isAuthenticated) {
+        const token = await azureB2C.getToken();
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+      }
+
+      const response = await fetch(`${BACKEND_URL}/posts/${selectedCategory}`, { headers });
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -160,7 +291,7 @@ function BlogPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (categoryName) {
@@ -193,7 +324,7 @@ function BlogPage() {
 }
 
 // Post Detail Page Component with Markdown Rendering
-function PostDetailPage() {
+function PostDetailPage({ isAuthenticated }: { isAuthenticated: boolean }) {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -205,7 +336,16 @@ function PostDetailPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/post/${id}`);
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      
+      if (isAuthenticated) {
+        const token = await azureB2C.getToken();
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+      }
+
+      const response = await fetch(`${BACKEND_URL}/post/${id}`, { headers });
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -219,7 +359,7 @@ function PostDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (postId) {
@@ -309,12 +449,57 @@ function PostDetailPage() {
   );
 }
 
+// Profile Page Component
+function ProfilePage({ user }: { user: UserProfile | null }) {
+  if (!user) {
+    return <div className="loading">Loading profile...</div>;
+  }
+
+  return (
+    <div className="profile-container">
+      <h2>User Profile</h2>
+      <div className="profile-card">
+        <div className="profile-header">
+          <h3>{user.name || 'User'}</h3>
+          {user.email && <p className="profile-email">{user.email}</p>}
+        </div>
+
+        <div className="profile-details">
+          <h4>Account Information</h4>
+          <p>
+            <strong>User ID:</strong> {user.sub}
+          </p>
+          {user.given_name && (
+            <p>
+              <strong>First Name:</strong> {user.given_name}
+            </p>
+          )}
+          {user.family_name && (
+            <p>
+              <strong>Last Name:</strong> {user.family_name}
+            </p>
+          )}
+
+          <div className="profile-message">
+            <p>This is protected data visible only to authenticated users</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Footer component
-function AppFooter() {
+function AppFooter({ isAuthenticated, user }: { 
+  isAuthenticated: boolean; 
+  user: UserProfile | null;
+}) {
   return (
     <footer>
       <p>DevInsights Blog - Azure Functions Edition</p>
-      <p className="server-info">Server: Azure Functions | Container: Docker + Nginx</p>
+      <p className="server-info">
+        Server: Azure Functions | Auth: {isAuthenticated ? user?.name || 'Authenticated' : 'Anonymous'}
+      </p>
     </footer>
   );
 }
