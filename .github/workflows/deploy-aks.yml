@@ -38,7 +38,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd kubernetes/backend-kubernetes-ts
-        npm ci
+        npm install
 
     - name: Run linter
       run: |
@@ -53,7 +53,7 @@ jobs:
     - name: Run backend tests
       run: |
         cd kubernetes/backend-kubernetes-ts
-        npm test -- --ci --watchAll=false --passWithNoTests
+        npm test -- --install --watchAll=false --passWithNoTests
       env:
         NODE_ENV: test
         CI: true
