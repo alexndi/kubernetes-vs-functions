@@ -87,7 +87,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   zone                   = "1"
 
   storage_mb                   = 32768
-  sku_name                     = B_Standard_B1ms
+  sku_name                     = "B_Standard_B1ms"
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
   public_network_access_enabled = true
@@ -209,7 +209,7 @@ resource "azurerm_linux_function_app" "main" {
     "POSTGRES_PASSWORD" = var.postgres_admin_password
     
     # Application settings
-    "FRONTEND_URL"      = "https://app-${local.base_name}-fe.azurewebsites.net"
+    "FRONTEND_URL"      = "https://functions.devinsights.site"
     "NODE_ENV"          = "production"
     "DB_MIGRATION_KEY"  = var.db_migration_key
   }
