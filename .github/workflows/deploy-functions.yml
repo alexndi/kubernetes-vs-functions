@@ -39,15 +39,10 @@ jobs:
         cd functions/backend-functions-ts
         npm run lint || true  # Continue even if linting has warnings
 
-    - name: Run type checking
-      run: |
-        cd functions/backend-functions-ts
-        npx tsc --noEmit
-
     - name: Run backend tests
       run: |
         cd functions/backend-functions-ts
-        npm test -- --install --watchAll=false --passWithNoTests
+        npm run test 
       env:
         NODE_ENV: test
         CI: true

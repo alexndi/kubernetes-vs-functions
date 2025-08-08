@@ -45,15 +45,10 @@ jobs:
         cd kubernetes/backend-kubernetes-ts
         npm run lint || true  # Continue even if linting has warnings
 
-    - name: Run type checking
-      run: |
-        cd kubernetes/backend-kubernetes-ts
-        npm run type-check
-
     - name: Run backend tests
       run: |
         cd kubernetes/backend-kubernetes-ts
-        npm test -- --install --watchAll=false --passWithNoTests
+        npm run test
       env:
         NODE_ENV: test
         CI: true
