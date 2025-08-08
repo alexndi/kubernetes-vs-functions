@@ -21,6 +21,22 @@ spec:
         ports:
         - containerPort: 3001
         env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: POSTGRES_HOST
           value: "psql-nbu-blog-k8s.postgres.database.azure.com"  # Updated NBU PostgreSQL
         - name: POSTGRES_PORT
@@ -43,10 +59,10 @@ spec:
           value: "https://devinsights.site"
         resources:
           limits:
-            memory: "512Mi"
+            memory: "1Gi"  # Increased for memory benchmarks
             cpu: "500m"
           requests:
-            memory: "256Mi"
+            memory: "1Gi"  # Increased for memory benchmarks
             cpu: "250m"
         livenessProbe:
           httpGet:

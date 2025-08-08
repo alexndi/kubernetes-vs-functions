@@ -8,6 +8,8 @@ import { ApiResponseMessage, AuthConfig } from './models/blog';
 import pool from './config/database';
 import runMigrations from './db/migrations/run';
 import seed from './db/seed';
+import benchmarkRouter from './routes/benchmark';
+
 
 // Create Express app and blog service
 const app = express();
@@ -313,6 +315,18 @@ if (require.main === module) {
       process.exit(1);
     });
 }
+
+app.use('/api/benchmark', benchmarkRouter);
+
+// Add pod information to all responses
+app.use((req: Request, res: Response, next) => {
+  res.set({
+    'X-Pod-Name': process.env.HOSTNAME || 'unknown',
+    'X-Pod-IP': process.env.POD_IP || 'unknown',
+    'X-Node-Name': process.env.NODE_NAME || 'unknown'
+  });
+  next();
+});
 
 // Export the app for testing
 export default app;
