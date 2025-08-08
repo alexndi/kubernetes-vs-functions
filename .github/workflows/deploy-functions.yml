@@ -47,12 +47,6 @@ jobs:
         NODE_ENV: test
         CI: true
 
-    - name: Display test results
-      if: always()
-      run: |
-        echo "✅ Backend tests completed"
-        echo "Test execution time: ${{ steps.test.outputs.time }}"
-
   deploy:
     name: Deploy to Azure
     runs-on: ubuntu-latest
