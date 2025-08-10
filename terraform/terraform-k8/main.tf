@@ -235,11 +235,6 @@ resource "azurerm_kubernetes_cluster" "main" {
     log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
   }
 
-  # Enable Azure AD integration
-  azure_active_directory_role_based_access_control {
-    azure_rbac_enabled = true
-  }
-
   tags = local.common_tags
 }
 

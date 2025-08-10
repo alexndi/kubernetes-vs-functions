@@ -5,7 +5,7 @@ subscription_id = "74be1b16-c7f6-4ebd-88d0-c1754bef3200"
 location        = "North Europe"
 
 # Custom Domain Configuration
-custom_domain = "devinsights.site"
+custom_domain = "kubernetes.devinsights.site"
 
 # AKS Configuration
 node_count = 2

@@ -36,11 +36,6 @@ variable "postgres_database_name" {
 }
 
 # Application Configuration
-variable "alert_email_address" {
-  description = "Email address for monitoring alerts"
-  type        = string
-}
-
 variable "db_migration_key" {
   description = "Secure key for database migration operations"
   type        = string

@@ -44,3 +44,26 @@
    - Cold start performance
 
 2. Document findings and analysis
+
+
+
+
+
+Setup with new account:
+have a profile with a valid debit card
+az login
+copy/paste the new subscrption in tf conf
+Microsoft.Storage, Microsoft.Web, Microsoft.ContainerRegistry, Microsoft.OperationalInsights, Microsoft.DBforPostgreSQL, microsoft.insights - register as resource provider
+tf apply tfstate boostrap
+tf apply in functions tf dir
+get publish profile for func-api - update github secret
+Create Azure Service Principal:
+   # First, get your subscription ID
+   az account show --query id --output tsv
+
+   # Then create the service principal (replace YOUR_SUBSCRIPTION_ID with the actual value)
+   az ad sp create-for-rbac \
+   --name "github-actions-devinsights" \
+   --role contributor \
+   --scopes /subscriptions/YOUR_SUBSCRIPTION_ID \
+   --sdk-auth  

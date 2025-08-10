@@ -47,7 +47,7 @@ locals {
 
 # Main Resource Group
 resource "azurerm_resource_group" "main" {
-  name     = "rg-${local.base_name}"
+  name     = "rg-${local.base_name}-func"
   location = var.location
 
   tags = local.common_tags
@@ -87,7 +87,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   zone                   = "1"
 
   storage_mb                   = 32768
-  sku_name                     = B_Standard_B1ms
+  sku_name                     = "B_Standard_B1ms"
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
   public_network_access_enabled = true
@@ -178,7 +178,7 @@ resource "azurerm_linux_function_app" "main" {
     http2_enabled = true
 
     application_stack {
-      node_version = "18"
+      node_version = "20"
     }
 
     cors {
@@ -194,7 +194,7 @@ resource "azurerm_linux_function_app" "main" {
 
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME"                = "node"
-    "WEBSITE_NODE_DEFAULT_VERSION"            = "~18"
+    "WEBSITE_NODE_DEFAULT_VERSION"            = "~20"
     "FUNCTIONS_EXTENSION_VERSION"             = "~4"
     "WEBSITE_RUN_FROM_PACKAGE"                = "1"
     
@@ -209,7 +209,7 @@ resource "azurerm_linux_function_app" "main" {
     "POSTGRES_PASSWORD" = var.postgres_admin_password
     
     # Application settings
-    "FRONTEND_URL"      = "https://app-${local.base_name}-fe.azurewebsites.net"
+    "FRONTEND_URL"      = "https://functions.devinsights.site"
     "NODE_ENV"          = "production"
     "DB_MIGRATION_KEY"  = var.db_migration_key
   }
@@ -242,8 +242,6 @@ resource "azurerm_linux_web_app" "frontend" {
 
   app_settings = {
     "DOCKER_REGISTRY_SERVER_URL"      = "https://${azurerm_container_registry.frontend.login_server}"
-    "DOCKER_REGISTRY_SERVER_USERNAME" = azurerm_container_registry.frontend.admin_username
-    "DOCKER_REGISTRY_SERVER_PASSWORD" = azurerm_container_registry.frontend.admin_password
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
     "WEBSITES_PORT" = "80"
     "NODE_ENV" = "production"
@@ -252,41 +250,9 @@ resource "azurerm_linux_web_app" "frontend" {
   tags = local.common_tags
 }
 
-# Action Group for Alerts
-resource "azurerm_monitor_action_group" "main" {
-  name                = "ag-${local.base_name}"
-  resource_group_name = azurerm_resource_group.main.name
-  short_name          = "nbu-blog"
-
-  email_receiver {
-    name          = "admin"
-    email_address = var.alert_email_address
-  }
-
-  tags = local.common_tags
-}
-
-# Function App Availability Alert
-resource "azurerm_monitor_metric_alert" "function_app_availability" {
-  name                = "alert-${local.base_name}-func-avail"
-  resource_group_name = azurerm_resource_group.main.name
-  scopes              = [azurerm_linux_function_app.main.id]
-  description         = "Function App availability is below threshold"
-  frequency           = "PT1M"
-  window_size         = "PT5M"
-  severity            = 2
-
-  criteria {
-    metric_namespace = "Microsoft.Web/sites"
-    metric_name      = "Http2xx"
-    aggregation      = "Total"
-    operator         = "LessThan"
-    threshold        = 1
-  }
-
-  action {
-    action_group_id = azurerm_monitor_action_group.main.id
-  }
-
-  tags = local.common_tags
+# Grant the App Service managed identity access to pull from ACR
+resource "azurerm_role_assignment" "app_service_acr_pull" {
+  scope                = azurerm_container_registry.frontend.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_linux_web_app.frontend.identity[0].principal_id
 }
