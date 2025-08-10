@@ -1,12 +1,12 @@
-// functions/frontend-functions-ts/src/services/azure-b2c.ts
+// functions/frontend-functions-ts/src/services/entra-external-id.ts
 import { PublicClientApplication, Configuration, AccountInfo, SilentRequest } from '@azure/msal-browser';
 
-// Azure AD B2C Configuration
-const b2cConfig: Configuration = {
+// Microsoft Entra External ID Configuration
+const entraConfig: Configuration = {
   auth: {
-    clientId: process.env.REACT_APP_B2C_CLIENT_ID || 'your-client-id',
-    authority: process.env.REACT_APP_B2C_AUTHORITY || 'https://yourtenant.b2clogin.com/yourtenant.onmicrosoft.com/B2C_1_SignUpSignIn',
-    knownAuthorities: ['yourtenant.b2clogin.com'],
+    clientId: process.env.REACT_APP_ENTRA_CLIENT_ID || 'your-entra-client-id',
+    authority: process.env.REACT_APP_ENTRA_AUTHORITY || 'https://yourtenant.ciamlogin.com/yourtenant.onmicrosoft.com',
+    knownAuthorities: ['yourtenant.ciamlogin.com'],
     redirectUri: window.location.origin,
     postLogoutRedirectUri: window.location.origin
   },
@@ -17,7 +17,7 @@ const b2cConfig: Configuration = {
 };
 
 // Create MSAL instance
-const msalInstance = new PublicClientApplication(b2cConfig);
+const msalInstance = new PublicClientApplication(entraConfig);
 
 // Initialize MSAL
 msalInstance.initialize().catch((error) => {
@@ -25,7 +25,7 @@ msalInstance.initialize().catch((error) => {
 });
 
 // Authentication service
-class AzureB2CService {
+class EntraExternalIdService {
   private account: AccountInfo | null = null;
 
   async initialize(): Promise<void> {
@@ -43,7 +43,7 @@ class AzureB2CService {
   async login(): Promise<void> {
     try {
       const loginResponse = await msalInstance.loginPopup({
-        scopes: ['openid', 'profile']
+        scopes: ['openid', 'profile', 'email']
       });
       this.account = loginResponse.account;
     } catch (error) {
@@ -80,7 +80,7 @@ class AzureB2CService {
 
     const silentRequest: SilentRequest = {
       account: this.account,
-      scopes: ['openid', 'profile']
+      scopes: ['openid', 'profile', 'email']
     };
 
     try {
@@ -93,5 +93,5 @@ class AzureB2CService {
   }
 }
 
-export const azureB2C = new AzureB2CService();
-export default azureB2C;
+export const entraExternalId = new EntraExternalIdService();
+export default entraExternalId;

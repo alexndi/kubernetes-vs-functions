@@ -1,4 +1,4 @@
-// functions/frontend-functions-ts/src/App.tsx - Azure B2C version
+// functions/frontend-functions-ts/src/App.tsx - Entra External ID version
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   BrowserRouter as Router,
@@ -13,7 +13,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import azureB2C from './services/azure-b2c';
+import entraExternalId from './services/entra-external-id';
 import './App.css';
 
 // Global constants
@@ -44,15 +44,15 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize Azure B2C
+    // Initialize Entra External ID
     const initAuth = async () => {
       try {
-        await azureB2C.initialize();
-        const authenticated = azureB2C.isAuthenticated();
+        await entraExternalId.initialize();
+        const authenticated = entraExternalId.isAuthenticated();
         setIsAuthenticated(authenticated);
         
         if (authenticated) {
-          const account = azureB2C.getAccount();
+          const account = entraExternalId.getAccount();
           if (account) {
             setUser({
               sub: account.localAccountId || account.homeAccountId,
@@ -75,9 +75,9 @@ function App() {
 
   const handleLogin = async () => {
     try {
-      await azureB2C.login();
+      await entraExternalId.login();
       setIsAuthenticated(true);
-      const account = azureB2C.getAccount();
+      const account = entraExternalId.getAccount();
       if (account) {
         setUser({
           sub: account.localAccountId || account.homeAccountId,
@@ -94,7 +94,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await azureB2C.logout();
+      await entraExternalId.logout();
       setIsAuthenticated(false);
       setUser(null);
     } catch (error) {
@@ -200,7 +200,7 @@ function AppHeader({ isAuthenticated, user, onLogin, onLogout }: {
           className="login-button azure-ad"
           onClick={isAuthenticated ? onLogout : onLogin}
         >
-          {isAuthenticated ? 'Logout' : 'Login with Azure'}
+          {isAuthenticated ? 'Logout' : 'Login with Microsoft'}
         </button>
         {isAuthenticated && user && (
           <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#90EE90' }}>
@@ -230,7 +230,7 @@ function HomePage() {
         <p className="hero-text">
           Your source for in-depth technical articles on programming, DevOps, cloud, and security
         </p>
-        <p className="hero-subtitle">Powered by serverless Azure Functions</p>
+        <p className="hero-subtitle">Powered by serverless Azure Functions with Microsoft Entra External ID</p>
       </div>
 
       <div className="category-grid">
@@ -271,7 +271,7 @@ function BlogPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       
       if (isAuthenticated) {
-        const token = await azureB2C.getToken();
+        const token = await entraExternalId.getToken();
         if (token) {
           headers.Authorization = `Bearer ${token}`;
         }
@@ -339,7 +339,7 @@ function PostDetailPage({ isAuthenticated }: { isAuthenticated: boolean }) {
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       
       if (isAuthenticated) {
-        const token = await azureB2C.getToken();
+        const token = await entraExternalId.getToken();
         if (token) {
           headers.Authorization = `Bearer ${token}`;
         }
@@ -481,7 +481,7 @@ function ProfilePage({ user }: { user: UserProfile | null }) {
           )}
 
           <div className="profile-message">
-            <p>This is protected data visible only to authenticated users</p>
+            <p>This is protected data visible only to authenticated users via Microsoft Entra External ID</p>
           </div>
         </div>
       </div>
@@ -498,7 +498,7 @@ function AppFooter({ isAuthenticated, user }: {
     <footer>
       <p>DevInsights Blog - Azure Functions Edition</p>
       <p className="server-info">
-        Server: Azure Functions | Auth: {isAuthenticated ? user?.name || 'Authenticated' : 'Anonymous'}
+        Server: Azure Functions | Auth: {isAuthenticated ? user?.name || 'Authenticated via Entra External ID' : 'Anonymous'}
       </p>
     </footer>
   );
