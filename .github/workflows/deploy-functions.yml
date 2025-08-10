@@ -13,7 +13,7 @@ env:
   AZURE_WEBAPP_NAME: 'app-nbu-blog-fe'
   REGISTRY_NAME: 'acrnbufrontend'
   IMAGE_NAME: 'nbu-blog-frontend'
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '20.x'
 
 jobs:
   test-backend:
@@ -121,7 +121,7 @@ jobs:
         echo ""
         echo "🔗 Application URLs:"
         echo "   🌐 Frontend: https://devinsights.site"
-        echo "   🔗 API: https://api.devinsights.site"
+        echo "   🔗 API: https://api.devinsights.site/api"
         echo ""
         echo "🔗 Azure URLs:"
         echo "   🌐 Frontend: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"

@@ -47,7 +47,7 @@ locals {
 
 # Main Resource Group
 resource "azurerm_resource_group" "main" {
-  name     = "rg-${local.base_name}"
+  name     = "rg-${local.base_name}-func"
   location = var.location
 
   tags = local.common_tags
@@ -178,7 +178,7 @@ resource "azurerm_linux_function_app" "main" {
     http2_enabled = true
 
     application_stack {
-      node_version = "18"
+      node_version = "20"
     }
 
     cors {
@@ -194,7 +194,7 @@ resource "azurerm_linux_function_app" "main" {
 
   app_settings = {
     "FUNCTIONS_WORKER_RUNTIME"                = "node"
-    "WEBSITE_NODE_DEFAULT_VERSION"            = "~18"
+    "WEBSITE_NODE_DEFAULT_VERSION"            = "~20"
     "FUNCTIONS_EXTENSION_VERSION"             = "~4"
     "WEBSITE_RUN_FROM_PACKAGE"                = "1"
     
@@ -247,45 +247,6 @@ resource "azurerm_linux_web_app" "frontend" {
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
     "WEBSITES_PORT" = "80"
     "NODE_ENV" = "production"
-  }
-
-  tags = local.common_tags
-}
-
-# Action Group for Alerts
-resource "azurerm_monitor_action_group" "main" {
-  name                = "ag-${local.base_name}"
-  resource_group_name = azurerm_resource_group.main.name
-  short_name          = "nbu-blog"
-
-  email_receiver {
-    name          = "admin"
-    email_address = var.alert_email_address
-  }
-
-  tags = local.common_tags
-}
-
-# Function App Availability Alert
-resource "azurerm_monitor_metric_alert" "function_app_availability" {
-  name                = "alert-${local.base_name}-func-avail"
-  resource_group_name = azurerm_resource_group.main.name
-  scopes              = [azurerm_linux_function_app.main.id]
-  description         = "Function App availability is below threshold"
-  frequency           = "PT1M"
-  window_size         = "PT5M"
-  severity            = 2
-
-  criteria {
-    metric_namespace = "Microsoft.Web/sites"
-    metric_name      = "Http2xx"
-    aggregation      = "Total"
-    operator         = "LessThan"
-    threshold        = 1
-  }
-
-  action {
-    action_group_id = azurerm_monitor_action_group.main.id
   }
 
   tags = local.common_tags
