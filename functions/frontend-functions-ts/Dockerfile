@@ -15,7 +15,7 @@ RUN npm install --only=production
 COPY . .
 
 # Set environment variables for build
-ARG REACT_APP_BACKEND_URL=https://api.devinsights.site
+ARG REACT_APP_BACKEND_URL=https://api.functions.devinsights.site
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 ENV CI=false
 

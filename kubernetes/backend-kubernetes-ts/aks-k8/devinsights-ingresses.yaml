@@ -12,10 +12,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - devinsights.site
+    - kubernetes.devinsights.site
     secretName: devinsights-tls
   rules:
-  - host: devinsights.site
+  - host: kubernetes.devinsights.site
     http:
       paths:
       - path: /auth
@@ -38,7 +38,7 @@ metadata:
     # FIXED: The rewrite rule was incorrect - it was removing /api but backend expects /api
     nginx.ingress.kubernetes.io/rewrite-target: /api/$2
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-origin: "https://devinsights.site"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://kubernetes.devinsights.site"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
@@ -46,10 +46,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - devinsights.site
+    - api.kubernetes.devinsights.site
     secretName: devinsights-tls
   rules:
-  - host: devinsights.site
+  - host: api.kubernetes.devinsights.site
     http:
       paths:
       # FIXED: Updated the path regex to properly capture and forward /api prefix
@@ -74,10 +74,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - devinsights.site
+    - kubernetes.devinsights.site
     secretName: devinsights-tls
   rules:
-  - host: devinsights.site
+  - host: kubernetes.devinsights.site
     http:
       paths:
       - path: /

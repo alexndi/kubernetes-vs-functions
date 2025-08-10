@@ -24,13 +24,18 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: REACT_APP_BACKEND_URL
-          value: "https://devinsights.site/api"
+          value: "https://api.kubernetes.devinsights.site/api"
         - name: REACT_APP_KEYCLOAK_URL
-          value: "https://devinsights.site/auth"
+          value: "https://kubernetes.devinsights.site/auth"
         - name: REACT_APP_KEYCLOAK_REALM
           value: "it-blog-realm"
         - name: REACT_APP_KEYCLOAK_CLIENT_ID
           value: "it-blog-client"
+        - name: REACT_APP_API_URL
+          value: "https://api.kubernetes.devinsights.site"
+        - name: PUBLIC_URL
+          value: "https://kubernetes.devinsights.site"
+
         resources:
           limits:
             memory: "256Mi"
