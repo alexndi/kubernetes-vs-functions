@@ -242,12 +242,17 @@ resource "azurerm_linux_web_app" "frontend" {
 
   app_settings = {
     "DOCKER_REGISTRY_SERVER_URL"      = "https://${azurerm_container_registry.frontend.login_server}"
-    "DOCKER_REGISTRY_SERVER_USERNAME" = azurerm_container_registry.frontend.admin_username
-    "DOCKER_REGISTRY_SERVER_PASSWORD" = azurerm_container_registry.frontend.admin_password
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE" = "false"
     "WEBSITES_PORT" = "80"
     "NODE_ENV" = "production"
   }
 
   tags = local.common_tags
+}
+
+# Grant the App Service managed identity access to pull from ACR
+resource "azurerm_role_assignment" "app_service_acr_pull" {
+  scope                = azurerm_container_registry.frontend.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_linux_web_app.frontend.identity[0].principal_id
 }

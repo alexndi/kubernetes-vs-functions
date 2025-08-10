@@ -90,7 +90,7 @@ jobs:
         
         # Build the Docker image with commit SHA
         docker build \
-          --build-arg REACT_APP_BACKEND_URL=https://api.kubernetes.devinsights.site/api \
+          --build-arg REACT_APP_BACKEND_URL=https://api.functions.devinsights.site/api \
           -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
           -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
           .
@@ -120,8 +120,8 @@ jobs:
         echo "   ✅ Frontend App: ${{ env.AZURE_WEBAPP_NAME }}"
         echo ""
         echo "🔗 Application URLs:"
-        echo "   🌐 Frontend: https://devinsights.site"
-        echo "   🔗 API: https://api.devinsights.site/api"
+        echo "   🌐 Frontend: https://functions.devinsights.site"
+        echo "   🔗 API: https://api.functions.devinsights.site/api"
         echo ""
         echo "🔗 Azure URLs:"
         echo "   🌐 Frontend: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
