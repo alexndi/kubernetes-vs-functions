@@ -67,3 +67,32 @@ Create Azure Service Principal:
    --role contributor \
    --scopes /subscriptions/YOUR_SUBSCRIPTION_ID \
    --sdk-auth  
+
+
+
+Seed and migrate:
+--------
+curl "https://func-nbu-blog-api.azurewebsites.net/api/db/migrate?operation=migrate&key=nbu-secure-migration-key-2025"
+
+
+{
+  "operation": "migrate",
+  "success": true,
+  "message": "Database migrations completed successfully",
+  "duration": 315,
+  "timestamp": "2025-08-10T12:54:05.050Z",
+  "environment": "production"
+
+--------
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: nbu-secure-migration-key-2025" \
+  -d '{"operation": "seed"}' \
+  "https://func-nbu-blog-api.azurewebsites.net/api/db/migrate"
+{
+  "operation": "seed",
+  "success": true,
+  "message": "Database seeding completed successfully",
+  "duration": 159,
+  "timestamp": "2025-08-10T13:06:28.758Z",
+  "environment": "production"
