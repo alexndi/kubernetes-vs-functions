@@ -14,6 +14,10 @@ env:
   REGISTRY_NAME: 'acrnbufrontend'
   IMAGE_NAME: 'nbu-blog-frontend'
   NODE_VERSION: '20.x'
+  REACT_APP_ENTRA_CLIENT_ID: '1d40f916-03d8-41a4-859b-9431cff65d99'
+  REACT_APP_ENTRA_AUTHORITY: 'https://devinsightsblog.ciamlogin.com/d1125adb-c883-4751-83de-4946aa0825ff'
+  REACT_APP_BACKEND_URL: 'https://api.functions.devinsights.site/api'
+
 
 jobs:
   test-backend:
@@ -90,7 +94,9 @@ jobs:
         
         # Build the Docker image with commit SHA
         docker build \
-          --build-arg REACT_APP_BACKEND_URL=https://api.functions.devinsights.site/api \
+          --build-arg REACT_APP_ENTRA_CLIENT_ID=${{ env.REACT_APP_ENTRA_CLIENT_ID }} \
+          --build-arg REACT_APP_ENTRA_AUTHORITY=${{ env.REACT_APP_ENTRA_AUTHORITY }} \
+          --build-arg REACT_APP_BACKEND_URL=${{ env.REACT_APP_BACKEND_URL }} \
           -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} \
           -t ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
           .

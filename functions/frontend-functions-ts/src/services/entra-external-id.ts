@@ -6,7 +6,7 @@ const entraConfig: Configuration = {
   auth: {
     clientId: process.env.REACT_APP_ENTRA_CLIENT_ID || 'your-entra-client-id',
     authority: process.env.REACT_APP_ENTRA_AUTHORITY || 'https://yourtenant.ciamlogin.com/yourtenant.onmicrosoft.com',
-    knownAuthorities: ['yourtenant.ciamlogin.com'],
+    knownAuthorities: ['devinsightsblog.ciamlogin.com'],
     redirectUri: window.location.origin,
     postLogoutRedirectUri: window.location.origin
   },
