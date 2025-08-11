@@ -29,6 +29,11 @@ spec:
           value: "nbuadmin"
         - name: POSTGRES_PASSWORD
           value: "NbuSecurePassword123!"
-        - name: NODE_ENV
-          value: "production"
-      backoffLimit: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      # REMOVED: backoffLimit: 3 (this doesn't belong here)
