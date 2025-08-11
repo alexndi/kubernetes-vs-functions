@@ -18,9 +18,9 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
     }
     
     // Decode token without verification (for simplicity - in production, verify with Azure B2C JWKS)
-    const decoded = jwt.decode(token) as any;
+    const decoded = jwt.decode(token);
     
-    if (!decoded) {
+    if (!decoded || typeof decoded === 'string') {
       context.res = {
         status: 401,
         body: { error: 'Invalid token' }
