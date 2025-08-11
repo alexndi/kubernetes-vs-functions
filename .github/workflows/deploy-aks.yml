@@ -159,6 +159,17 @@ jobs:
         # Update frontend image tag
         sed -i "s|acrnbuk8s\.azurecr\.io/nbu-blog-frontend:.*|acrnbuk8s.azurecr.io/nbu-blog-frontend:${{ github.sha }}|g" kubernetes/frontend-kubernetes-ts/aks-k8/*.yaml
 
+    - name: Install cert-manager
+      run: |
+        # Create namespace first
+        kubectl create namespace cert-manager
+        
+        # Install cert-manager
+        kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
+        
+        # Wait for cert-manager to be ready
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=300s  
+
     - name: Apply Kubernetes Manifests
       run: |
         # Deploy all backend components (including Keycloak)

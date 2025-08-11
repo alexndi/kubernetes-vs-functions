@@ -1,16 +1,24 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: blog-api-migrate
+  name: blog-api-migration
+  labels:
+    app: blog-api-migration
 spec:
+  backoffLimit: 3
   template:
+    metadata:
+      labels:
+        app: blog-api-migration
     spec:
       restartPolicy: Never
       containers:
-      - name: migrate
+      - name: migration
         image: acrnbuk8s.azurecr.io/nbu-blog-api:latest
         command: ["npm", "run", "migrate"]
         env:
+        - name: NODE_ENV
+          value: "production"
         - name: POSTGRES_HOST
           value: "psql-nbu-blog-k8s.postgres.database.azure.com"
         - name: POSTGRES_PORT
