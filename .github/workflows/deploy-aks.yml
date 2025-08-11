@@ -162,7 +162,7 @@ jobs:
     - name: Install cert-manager
       run: |
         # Create namespace first
-        kubectl create namespace cert-manager
+        kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
         
         # Install cert-manager
         kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.18.2/cert-manager.yaml
