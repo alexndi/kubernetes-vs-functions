@@ -207,6 +207,12 @@ resource "azurerm_linux_function_app" "main" {
     "POSTGRES_DB"       = azurerm_postgresql_flexible_server_database.main.name
     "POSTGRES_USER"     = var.postgres_admin_username
     "POSTGRES_PASSWORD" = var.postgres_admin_password
+
+    # B2c Integration
+    "ENTRA_EXTERNAL_TENANT_ID" = "d1125adb-c883-4751-83de-4946aa0825ff"
+    "ENTRA_EXTERNAL_CLIENT_ID" = "1d40f916-03d8-41a4-859b-9431cff65d99"
+    "ENTRA_EXTERNAL_CLIENT_SECRET" = "886ffa4a-f274-4a84-81b2-bc8a95955104"
+    "ENTRA_EXTERNAL_AUTHORITY" = "https://devinsightsblog.ciamlogin.com/devinsightsblog.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=1d40f916-03d8-41a4-859b-9431cff65d99"
     
     # Application settings
     "FRONTEND_URL"      = "https://functions.devinsights.site"
