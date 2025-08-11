@@ -48,12 +48,6 @@ variable "postgres_database_name" {
   default     = "nbu_devinsights_blog"
 }
 
-# Application Configuration
-variable "alert_email_address" {
-  description = "Email address for monitoring alerts"
-  type        = string
-}
-
 # Additional Tags
 variable "additional_tags" {
   description = "Additional tags to apply to NBU resources"

@@ -18,7 +18,7 @@ env:
   CONTAINER_REGISTRY: "acrnbuk8s"
   
   # Application Configuration
-  CUSTOM_DOMAIN: "functions.devinsights.site"
+  CUSTOM_DOMAIN: "kubernetes.devinsights.site"
   NODE_VERSION: '18.x'
 
 jobs:
