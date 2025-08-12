@@ -524,3 +524,10 @@ kubectl scale deployment <app-name> --replicas=<count>
 - **Frontend**: https://devinsights.site
 - **API**: https://api.devinsights.site
 - **Keycloak**: https://devinsights.site/auth
+
+
+
+
+deploy with tf:
+tf apply
+register Microsoft.Network , Microsoft.ContainerService , Microsoft.OperationsManagement

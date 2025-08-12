@@ -5,7 +5,7 @@ metadata:
   labels:
     app: keycloak
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: keycloak
@@ -24,7 +24,7 @@ spec:
           - --hostname-strict=false
           - --http-relative-path=/auth
           - --proxy-headers=xforwarded
-          - --hostname=devinsights.site  # Set the public hostname
+          - --hostname=kubernetes.devinsights.site  # Set the public hostname
         env:
           # Admin credentials
           - name: KEYCLOAK_ADMIN
@@ -70,7 +70,7 @@ spec:
           - name: KC_HTTP_RELATIVE_PATH
             value: "/auth"
           - name: KC_HOSTNAME
-            value: "devinsights.site"
+            value: "kubernetes.devinsights.site"
           
           # Health and performance
           - name: KC_HEALTH_ENABLED

@@ -50,13 +50,17 @@ spec:
         - name: NODE_ENV
           value: "production"
         - name: KEYCLOAK_URL
-          value: "https://devinsights.site/auth"
+          value: "https://kubernetes.devinsights.site/auth"
         - name: KEYCLOAK_REALM
           value: "it-blog-realm"
         - name: KEYCLOAK_CLIENT_ID
           value: "it-blog-client"
         - name: FRONTEND_URL
-          value: "https://devinsights.site"
+          value: "https://kubernetes.devinsights.site"
+        - name: API_URL
+          value: "https://api.kubernetes.devinsights.site"
+        - name: ALLOWED_ORIGINS
+          value: "https://kubernetes.devinsights.site"
         resources:
           limits:
             memory: "1Gi"  # Increased for memory benchmarks

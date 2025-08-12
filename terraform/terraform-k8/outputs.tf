@@ -37,6 +37,7 @@ output "kube_config" {
 # Connection information
 output "connection_info" {
   description = "Connection information for cluster access"
+  sensitive   = true
   value = {
     get_credentials_command = "az aks get-credentials --resource-group ${azurerm_resource_group.main.name} --name ${azurerm_kubernetes_cluster.main.name}"
     kubectl_config_file     = "${path.module}/kubeconfig"
@@ -71,26 +72,16 @@ output "database_info" {
 
 # Manual DNS Configuration Guide
 output "manual_dns_setup" {
-  description = "DNS records to create manually at your domain provider"
   value = {
-    instructions = "Create these DNS records at your domain provider after configuring ingress"
     main_domain = {
-      name  = var.custom_domain
+      name  = "kubernetes"  # Subdomain for frontend
       type  = "A"
       value = "INGRESS_EXTERNAL_IP"
-      note  = "Points your domain to the AKS ingress controller (get IP after ingress setup)"
     }
     api_subdomain = {
-      name  = "api.${var.custom_domain}"
+      name  = "api.kubernetes"  # Subdomain for API
       type  = "A"
       value = "INGRESS_EXTERNAL_IP"
-      note  = "Points api subdomain to the same ingress controller"
-    }
-    wildcard_option = {
-      name  = "*.${var.custom_domain}"
-      type  = "A"
-      value = "INGRESS_EXTERNAL_IP"
-      note  = "Alternative: Single wildcard record for all subdomains"
     }
   }
 }

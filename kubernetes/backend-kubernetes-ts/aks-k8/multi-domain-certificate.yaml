@@ -1,0 +1,15 @@
+# Single multi-domain certificate for both kubernetes.devinsights.site and api.kubernetes.devinsights.site
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: devinsights-multi-tls
+  namespace: default
+spec:
+  secretName: devinsights-multi-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+  dnsNames:
+  - kubernetes.devinsights.site
+  - api.kubernetes.devinsights.site
