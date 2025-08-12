@@ -13,7 +13,8 @@ spec:
   tls:
   - hosts:
     - kubernetes.devinsights.site
-    secretName: devinsights-tls
+    - api.kubernetes.devinsights.site
+    secretName: devinsights-multi-tls
   rules:
   - host: kubernetes.devinsights.site
     http:
@@ -46,8 +47,9 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
+    - kubernetes.devinsights.site
     - api.kubernetes.devinsights.site
-    secretName: devinsights-tls
+    secretName: devinsights-multi-tls
   rules:
   - host: api.kubernetes.devinsights.site
     http:
@@ -75,7 +77,8 @@ spec:
   tls:
   - hosts:
     - kubernetes.devinsights.site
-    secretName: devinsights-tls
+    - api.kubernetes.devinsights.site
+    secretName: devinsights-multi-tls
   rules:
   - host: kubernetes.devinsights.site
     http:

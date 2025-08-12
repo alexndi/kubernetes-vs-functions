@@ -37,6 +37,7 @@ output "kube_config" {
 # Connection information
 output "connection_info" {
   description = "Connection information for cluster access"
+  sensitive   = true
   value = {
     get_credentials_command = "az aks get-credentials --resource-group ${azurerm_resource_group.main.name} --name ${azurerm_kubernetes_cluster.main.name}"
     kubectl_config_file     = "${path.module}/kubeconfig"
