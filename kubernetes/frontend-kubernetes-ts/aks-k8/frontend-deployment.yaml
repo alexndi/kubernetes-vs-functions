@@ -43,6 +43,7 @@ spec:
           limits:
             memory: "128Mi"   # Sufficient for nginx + static assets
             cpu: "100m"       # Burst capability
+        readinessProbe:
           httpGet:
             path: /
             port: 80
