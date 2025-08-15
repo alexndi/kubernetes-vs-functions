@@ -6,16 +6,16 @@ const router = Router();
 const controller = new BenchmarkController();
 
 // CPU benchmark endpoint
-router.get('/cpu', controller.cpuBenchmark);
-router.post('/cpu', controller.cpuBenchmark);
+router.get('/cpu', controller.cpuBenchmark.bind(controller));
+router.post('/cpu', controller.cpuBenchmark.bind(controller));
 
 // Memory benchmark endpoint
-router.get('/memory', controller.memoryBenchmark);
-router.post('/memory', controller.memoryBenchmark);
+router.get('/memory', controller.memoryBenchmark.bind(controller));
+router.post('/memory', controller.memoryBenchmark.bind(controller));
 
 // Latency benchmark endpoint
-router.get('/latency', controller.latencyBenchmark);
-router.post('/latency', controller.latencyBenchmark);
+router.get('/latency', controller.latencyBenchmark.bind(controller));
+router.post('/latency', controller.latencyBenchmark.bind(controller));
 
 // Health check for benchmarks
 router.get('/health', (req, res) => {

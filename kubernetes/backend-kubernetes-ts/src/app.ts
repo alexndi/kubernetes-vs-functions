@@ -261,6 +261,19 @@ app.get(
   },
 );
 
+// Register benchmark routes BEFORE error handling
+app.use('/api/benchmark', benchmarkRouter);
+
+// Add pod information to all responses
+app.use((req: Request, res: Response, next) => {
+  res.set({
+    'X-Pod-Name': process.env.HOSTNAME || 'unknown',
+    'X-Pod-IP': process.env.POD_IP || 'unknown',
+    'X-Node-Name': process.env.NODE_NAME || 'unknown'
+  });
+  next();
+});
+
 // Default route
 app.get('/', (_req: Request, res: Response) => {
   const responseData: ApiResponseMessage = {
@@ -271,14 +284,15 @@ app.get('/', (_req: Request, res: Response) => {
       getPostById: '/api/post/{id}',
       userProfile: '/api/user/profile (protected)',
       authConfig: '/api/auth/config',
+      benchmarks: '/api/benchmark/{cpu|memory|latency}',
     },
   };
 
   res.json(responseData);
 });
 
-// Error handling middleware
-app.use((error: Error, req: Request, res: Response) => {
+// Error handling middleware - MUST have 4 parameters
+app.use((error: Error, req: Request, res: Response, next: any) => {
   console.error('Unhandled error:', error);
 
   res.status(500).json({
@@ -315,18 +329,6 @@ if (require.main === module) {
       process.exit(1);
     });
 }
-
-app.use('/api/benchmark', benchmarkRouter);
-
-// Add pod information to all responses
-app.use((req: Request, res: Response, next) => {
-  res.set({
-    'X-Pod-Name': process.env.HOSTNAME || 'unknown',
-    'X-Pod-IP': process.env.POD_IP || 'unknown',
-    'X-Node-Name': process.env.NODE_NAME || 'unknown'
-  });
-  next();
-});
 
 // Export the app for testing
 export default app;

@@ -47,6 +47,7 @@ export interface ApiEndpoints {
   getPostById: string;
   userProfile: string;
   authConfig: string;
+  benchmarks: string;
 }
 
 export interface ApiResponseMessage {
