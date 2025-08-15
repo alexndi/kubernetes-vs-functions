@@ -106,12 +106,12 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
         resources:
-          limits:
-            memory: "1536Mi"
-            cpu: "1000m"
           requests:
-            memory: "1024Mi"
-            cpu: "500m"
+            memory: "512Mi"   # JVM + Keycloak application
+            cpu: "250m"       # JWT processing + database operations
+          limits:
+            memory: "1Gi"     # JVM heap space + caching
+            cpu: "500m"       # Handle authentication load
 ---
 # Headless service for DNS discovery
 apiVersion: v1

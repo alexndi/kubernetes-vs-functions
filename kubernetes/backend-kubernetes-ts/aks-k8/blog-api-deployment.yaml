@@ -63,8 +63,8 @@ spec:
           value: "https://kubernetes.devinsights.site"
         resources:
           limits:
-            memory: "1Gi"  # Increased for memory benchmarks
-            cpu: "500m"
+            memory: "128Mi"   # Node.js base + application code
+            cpu: "100m"       # Light API processing
           requests:
             memory: "1Gi"  # Increased for memory benchmarks
             cpu: "250m"
