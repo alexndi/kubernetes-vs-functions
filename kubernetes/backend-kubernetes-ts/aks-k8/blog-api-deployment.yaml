@@ -63,11 +63,11 @@ spec:
           value: "https://kubernetes.devinsights.site"
         resources:
           requests:
-            memory: "128Mi"   # Node.js base + application code
-            cpu: "100m"       # Light API processing
+            memory: "256Mi"   # Node.js base + application code + benchmarks
+            cpu: "250m"       # Adequate for benchmark processing
           limits:
-            memory: "1Gi"  # Increased for memory benchmarks
-            cpu: "250m"
+            memory: "2Gi"     # Increased for heavy memory benchmarks
+            cpu: "1000m"      # 1 full core for CPU-intensive tests
         livenessProbe:
           httpGet:
             path: /health
