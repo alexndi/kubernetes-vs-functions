@@ -37,12 +37,12 @@ spec:
           value: "https://kubernetes.devinsights.site"
 
         resources:
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
           requests:
-            memory: "128Mi"
-            cpu: "100m"
+            memory: "64Mi"    # Minimal for static files + nginx
+            cpu: "50m"        # Very low - just serving static content
+          limits:
+            memory: "128Mi"   # Sufficient for nginx + static assets
+            cpu: "100m"       # Burst capability
         readinessProbe:
           httpGet:
             path: /

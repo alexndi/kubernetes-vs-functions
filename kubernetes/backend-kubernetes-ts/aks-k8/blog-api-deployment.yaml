@@ -21,6 +21,22 @@ spec:
         ports:
         - containerPort: 3001
         env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: POSTGRES_HOST
           value: "psql-nbu-blog-k8s.postgres.database.azure.com"  # Updated NBU PostgreSQL
         - name: POSTGRES_PORT
@@ -46,12 +62,12 @@ spec:
         - name: ALLOWED_ORIGINS
           value: "https://kubernetes.devinsights.site"
         resources:
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "256Mi"   # Node.js base + application code + benchmarks
+            cpu: "250m"       # Adequate for benchmark processing
+          limits:
+            memory: "2Gi"     # Increased for heavy memory benchmarks
+            cpu: "1000m"      # 1 full core for CPU-intensive tests
         livenessProbe:
           httpGet:
             path: /health
