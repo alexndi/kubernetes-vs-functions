@@ -8,6 +8,7 @@ import runMigrations from './db/migrations/run';
 import seed from './db/seed';
 import benchmarkRouter from './routes/benchmark';
 import authRoutes from './routes/auth';
+import userRoutes from './routes/user';
 import blogRoutes from './routes/blog';
 import adminRoutes from './routes/admin';
 
@@ -121,6 +122,7 @@ app.get('/health', async (_req: Request, res: Response) => {
 
 // Register route modules
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api', blogRoutes);
 app.use('/api/admin', adminRoutes);
 

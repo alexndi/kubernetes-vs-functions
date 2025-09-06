@@ -19,28 +19,14 @@ router.get('/config', (_req: Request, res: Response) => {
   res.json(config);
 });
 
-// Protected endpoint - only accessible for authenticated users
+// This endpoint moved to user routes - keeping for backward compatibility
 router.get(
-  '/user/profile',
+  '/user/profile', 
   authMiddleware.authenticateToken,
   authMiddleware.requireAuth,
   (req: Request, res: Response) => {
-    console.log('Profile request from authenticated user:', req.user?.preferred_username);
-
-    res.json({
-      user: {
-        sub: req.user?.sub,
-        preferred_username: req.user?.preferred_username,
-        name: req.user?.name,
-        email: req.user?.email,
-        given_name: req.user?.given_name,
-        family_name: req.user?.family_name,
-        realm_access: req.user?.realm_access,
-      },
-      message: 'This is protected data visible only to authenticated users',
-      timestamp: new Date().toISOString(),
-    });
-  },
+    res.redirect(301, '/api/user/profile');
+  }
 );
 
 export default router;
