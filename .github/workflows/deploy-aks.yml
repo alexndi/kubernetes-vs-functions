@@ -113,7 +113,7 @@ jobs:
         
         echo "Building frontend Docker image..."
         docker build \
-          --build-arg REACT_APP_BACKEND_URL=https://api.${{ env.CUSTOM_DOMAIN }}/api \
+          --build-arg REACT_APP_BACKEND_URL=https://api.${{ env.CUSTOM_DOMAIN }} \
           --build-arg REACT_APP_KEYCLOAK_URL=https://${{ env.CUSTOM_DOMAIN }}/auth \
           --build-arg REACT_APP_KEYCLOAK_REALM=it-blog-realm \
           --build-arg REACT_APP_KEYCLOAK_CLIENT_ID=it-blog-client \
