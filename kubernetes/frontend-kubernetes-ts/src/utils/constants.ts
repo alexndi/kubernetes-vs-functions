@@ -1,5 +1,5 @@
-// Global constants for the application
-export const BACKEND_URL: string = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+// Global constants for the application  
+export const BACKEND_URL: string = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export const API_ENDPOINTS = {
   POSTS: (category: string) => `/api/posts/${category}`,
