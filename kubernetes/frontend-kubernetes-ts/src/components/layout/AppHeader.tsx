@@ -1,22 +1,56 @@
 // Header component
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useKeycloak } from '@react-keycloak/web';
 import { CATEGORIES } from '../../utils/constants';
 
 function AppHeader() {
   const { keycloak, initialized } = useKeycloak();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  const handleAuth = () => {
-    if (!initialized) {
-      return;
-    }
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
 
-    if (keycloak.authenticated) {
-      keycloak.logout();
-    } else {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleLogin = () => {
+    if (initialized && !keycloak.authenticated) {
       keycloak.login();
     }
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+    setIsDropdownOpen(false);
+  };
+
+  const handleLogoutClick = () => {
+    if (initialized && keycloak.authenticated) {
+      keycloak.logout();
+    }
+    setIsDropdownOpen(false);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const getUserDisplayName = () => {
+    return keycloak.tokenParsed?.preferred_username || 
+           keycloak.tokenParsed?.name || 
+           keycloak.tokenParsed?.given_name || 
+           'Authenticated';
   };
 
   return (
@@ -36,21 +70,52 @@ function AppHeader() {
             <button>{category.name}</button>
           </Link>
         ))}
-        {keycloak.authenticated && (
-          <Link to="/profile">
-            <button>Profile</button>
-          </Link>
-        )}
       </nav>
 
       <div className="auth-container">
-        <button className="login-button keycloak" onClick={handleAuth} disabled={!initialized}>
-          {keycloak.authenticated ? 'Logout' : 'Login with Keycloak'}
-        </button>
-        {keycloak.authenticated && (
-          <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#90EE90' }}>
-            ✓ {keycloak.tokenParsed?.preferred_username || 'Authenticated'}
-          </span>
+        {!keycloak.authenticated ? (
+          <button 
+            className="login-button keycloak" 
+            onClick={handleLogin} 
+            disabled={!initialized}
+          >
+            Login with Keycloak
+          </button>
+        ) : (
+          <div className="user-dropdown" ref={dropdownRef}>
+            <button 
+              className="user-button"
+              onClick={toggleDropdown}
+              aria-expanded={isDropdownOpen}
+              disabled={!initialized}
+            >
+              <span className="user-status">✓</span>
+              <span className="user-name">
+                {getUserDisplayName()}
+              </span>
+              <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
+            </button>
+            
+            {isDropdownOpen && (
+              <div className="dropdown-menu">
+                <button 
+                  className="dropdown-item"
+                  onClick={handleProfileClick}
+                >
+                  <span className="dropdown-icon">👤</span>
+                  Profile
+                </button>
+                <div className="dropdown-divider" />
+                <button 
+                  className="dropdown-item logout"
+                  onClick={handleLogoutClick}
+                >
+                  <span className="dropdown-icon">🚪</span>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </header>
