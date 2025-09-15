@@ -238,3 +238,6 @@ Department of Informatics
 • Mathematical formulae should be in italic. The font should be the same as the
 main font of the diploma thesis. All symbols are referenced in italic in the text in
 the same way.
+
+
+feature 3 changes
