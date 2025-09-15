@@ -135,5 +135,3 @@ jobs:
         echo ""
         echo "📦 Container Image:"
         echo "   ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-
-feature1 changes

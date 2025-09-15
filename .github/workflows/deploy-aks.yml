@@ -207,6 +207,3 @@ jobs:
         echo "📈 Next Steps:"
         echo "   Monitor: kubectl logs -f deployment/blog-api"
         echo "   Scale:   kubectl scale deployment/blog-api --replicas=3"
-
-
-feature1 changes
