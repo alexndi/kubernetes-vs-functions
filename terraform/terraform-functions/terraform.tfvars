@@ -1,8 +1,8 @@
 # terraform-functions/terraform.tfvars
 
 # Azure Configuration
-subscription_id = "982a79f8-b97c-45c0-adcf-7c9e98a71d0b"
-location        = "North Europe"
+subscription_id = "36ed6908-c1e2-4a94-ae5f-331c1e90ed9e"
+location        = "West Europe"
 
 # Custom Domain Configuration
 custom_domain = "functions.devinsights.site"

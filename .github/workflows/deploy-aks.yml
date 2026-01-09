@@ -10,7 +10,7 @@ on:
 
 env:
   # Azure Configuration
-  AZURE_SUBSCRIPTION_ID: "74be1b16-c7f6-4ebd-88d0-c1754bef3200"
+  AZURE_SUBSCRIPTION_ID: "36ed6908-c1e2-4a94-ae5f-331c1e90ed9e"
   
   # NBU Resources
   RESOURCE_GROUP: "rg-nbu-blog-k8s"

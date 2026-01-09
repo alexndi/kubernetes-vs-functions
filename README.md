@@ -1,3 +1,109 @@
+# Kubernetes vs Lambdas - NBU DevInsights Blog
+
+A comparative implementation of a blog platform using two architectures: Azure Kubernetes Service (AKS) and Azure Functions (Serverless).
+
+---
+
+## Terraform Deployment Guide
+
+### Prerequisites
+
+Before deploying, ensure you have:
+
+- **Azure CLI** installed and configured
+- **Terraform** >= 1.0 installed
+- An **Azure subscription** with appropriate permissions
+- Register required resource providers:
+  ```bash
+  az provider register --namespace Microsoft.Storage
+  az provider register --namespace Microsoft.Web
+  az provider register --namespace Microsoft.ContainerRegistry
+  az provider register --namespace Microsoft.OperationalInsights
+  az provider register --namespace Microsoft.DBforPostgreSQL
+  az provider register --namespace microsoft.insights
+  az provider register --namespace Microsoft.Network
+  az provider register --namespace Microsoft.ContainerService
+  az provider register --namespace Microsoft.OperationsManagement
+  ```
+
+### Step 1: Login to Azure
+
+```bash
+az login
+```
+
+### Step 2: Bootstrap Terraform State Storage
+
+This creates the Azure Storage Account that holds Terraform state files.
+
+```bash
+cd terraform/state-bootstrap
+terraform init
+terraform apply
+```
+
+### Step 3: Deploy Infrastructure
+
+Choose **one** of the following deployment options:
+
+#### Option A: Deploy Serverless (Azure Functions)
+
+```bash
+cd terraform/terraform-functions
+terraform init
+terraform plan
+terraform apply
+```
+
+#### Option B: Deploy Kubernetes (AKS)
+
+```bash
+cd terraform/terraform-k8
+terraform init
+terraform plan
+terraform apply
+```
+
+### Step 4: Post-Deployment
+
+#### For Azure Functions
+
+1. Get the publish profile for the Function App and update GitHub secrets
+2. Run database migrations:
+   ```bash
+   curl "https://func-nbu-blog-api.azurewebsites.net/api/db/migrate?operation=migrate&key=YOUR_MIGRATION_KEY"
+   ```
+3. Seed the database:
+   ```bash
+   curl -X POST \
+     -H "Content-Type: application/json" \
+     -H "x-api-key: YOUR_MIGRATION_KEY" \
+     -d '{"operation": "seed"}' \
+     "https://func-nbu-blog-api.azurewebsites.net/api/db/migrate"
+   ```
+
+#### For Kubernetes
+
+1. Get AKS credentials:
+   ```bash
+   az aks get-credentials --resource-group rg-nbu-blog-k8s --name aks-nbu-blog
+   ```
+2. Verify cluster access:
+   ```bash
+   kubectl get nodes
+   ```
+
+### Cleanup
+
+To destroy the infrastructure:
+
+```bash
+# From the respective terraform directory
+terraform destroy
+```
+
+---
+
 # Implementation Plan
 
 ## Kubernetes Version

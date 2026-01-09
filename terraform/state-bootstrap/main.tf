@@ -11,7 +11,7 @@ terraform {
 
 provider "azurerm" {
   features {}
-  subscription_id = "982a79f8-b97c-45c0-adcf-7c9e98a71d0b"
+  subscription_id = "36ed6908-c1e2-4a94-ae5f-331c1e90ed9e"
   skip_provider_registration = true
 }
 
@@ -32,14 +32,14 @@ locals {
 # Resource Group for Terraform State
 resource "azurerm_resource_group" "terraform_state" {
   name     = "rg-${local.base_name}-tfstate"
-  location = "North Europe"
+  location = "West Europe"
 
   tags = local.common_tags
 }
 
 # Storage Account for Terraform State
 resource "azurerm_storage_account" "terraform_state" {
-  name                     = "stnbuterraformstate"
+  name                     = "stnbutfstate36ed"  # Unique suffix from subscription ID
   resource_group_name      = azurerm_resource_group.terraform_state.name
   location                 = azurerm_resource_group.terraform_state.location
   account_tier             = "Standard"

@@ -6,10 +6,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
     }
-    local = {
-      source  = "hashicorp/local"
-      version = "~> 2.0"
-    }
   }
 }
 
@@ -130,7 +126,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres" {
 
 # PostgreSQL Flexible Server
 resource "azurerm_postgresql_flexible_server" "main" {
-  name                   = "psql-${local.base_name}-k8s"
+  name                   = "psql-${local.base_name}-k8s-36ed"  # Unique suffix
   resource_group_name    = azurerm_resource_group.main.name
   location               = azurerm_resource_group.main.location
   version                = "15"
@@ -138,7 +134,6 @@ resource "azurerm_postgresql_flexible_server" "main" {
   private_dns_zone_id    = azurerm_private_dns_zone.postgres.id
   administrator_login    = var.postgres_admin_username
   administrator_password = var.postgres_admin_password
-  zone                   = "1"
 
   storage_mb                   = 32768  # 32GB storage
   sku_name                     = "B_Standard_B1ms"
@@ -146,6 +141,10 @@ resource "azurerm_postgresql_flexible_server" "main" {
   public_network_access_enabled = false
 
   tags = local.common_tags
+
+  lifecycle {
+    ignore_changes = [zone]  # Zone can't be changed after creation
+  }
 
   depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
 }
@@ -245,8 +244,5 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
   scope                = azurerm_container_registry.main.id
 }
 
-# Output the kubeconfig
-resource "local_file" "kubeconfig" {
-  content  = azurerm_kubernetes_cluster.main.kube_config_raw
-  filename = "${path.module}/kubeconfig"
-}
+# Note: Use 'az aks get-credentials' to get kubeconfig
+# Removed local_file.kubeconfig for security reasons
